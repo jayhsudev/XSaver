@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">api.yourdomain.com</domain>
+        <!-- 仅在开发环境中允许明文流量，生产环境应该使用HTTPS -->
+    </domain-config>
+</network-security-config>

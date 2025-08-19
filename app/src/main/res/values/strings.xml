@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">XSaver</string>
+    <string name="paste_link_hint">粘贴X平台链接</string>
+    <string name="download">下载</string>
+    <string name="downloading">下载中...</string>
+    <string name="download_complete">下载完成</string>
+    <string name="download_failed">下载失败</string>
+    <string name="no_media_found">未找到媒体文件</string>
+    <string name="invalid_link">无效的链接</string>
+    <string name="videos">视频</string>
+    <string name="images">图像</string>
+    <string name="audios">音乐</string>
+    <string name="history">下载记录</string>
+    <string name="empty_history">暂无下载记录</string>
+    <string name="permission_required">需要存储权限</string>
+    <string name="grant_permission">授予权限</string>
+    <string name="save_to">保存到</string>
+    <string name="download_path">/XSaver/</string>
+</resources>
