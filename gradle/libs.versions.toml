@@ -7,11 +7,17 @@ junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.9.2"
 activityCompose = "1.10.1"
-composeBom = "2024.09.00"
+composeBom = "2025.08.00"
 roomVersion = "2.7.2"
 retrofitVersion = "3.0.0"
 okhttpVersion = "5.1.0"
 draggerHiltVerion = "2.57"
+navigationVersion = "2.9.3"
+hiltNavigationComposeVersion = "1.2.0"
+coil3Version = "3.3.0"
+material = "1.12.0"
+accompanistPermissionsVersion = "0.37.3"
+kspVersion = "2.2.10-2.0.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -29,14 +35,15 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended"}
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 # Navigation
-androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose:2.9.3" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationVersion" }
 # Hilt Dependency Injection
 dagger-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "draggerHiltVerion" }
 dagger-hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "draggerHiltVerion" }
-androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose:1.2.0" }
+androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationComposeVersion" }
 # Image Loading
-coil-kt-coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose:3.3.0" }
+coil-kt-coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil3Version" }
 # Networking
 squareup-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofitVersion" }
 squareup-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofitVersion" }
@@ -46,10 +53,12 @@ squareup-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomVersion" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomVersion" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomVersion" }
+# Permissions
+accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanistPermissionsVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-devtools-ksp = { id = "com.google.devtools.ksp", version = "2.2.10-2.0.2" }
+devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "kspVersion" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "draggerHiltVerion"}

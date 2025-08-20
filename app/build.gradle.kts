@@ -30,11 +30,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
-    // TODO
     kotlin {
+        jvmToolchain(21)
         target {
             compilerOptions {
                 optIn.add("kotlin.RequiresOptIn")
@@ -42,7 +42,8 @@ android {
         }
     }
     buildFeatures {
-        compose = true
+    compose = true
+    buildConfig = true
     }
 }
 
@@ -57,6 +58,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
+    // Material Components (for XML themes/styles)
+    implementation(libs.material)
     // Navigation
     implementation(libs.androidx.navigation.compose)
     // Hilt Dependency Injection
@@ -74,6 +77,8 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    // Permissions
+    implementation(libs.accompanist.permissions)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

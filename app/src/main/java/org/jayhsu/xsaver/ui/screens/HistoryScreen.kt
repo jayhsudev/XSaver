@@ -68,24 +68,28 @@ fun HistoryScreen() {
             SegmentedButton(
                 selected = selectedMediaType == null,
                 onClick = { selectedMediaType = null }, // 显示全部
+                shape = RoundedCornerShape(16.dp),
                 icon = { Icon(Icons.Filled.Info, contentDescription = null) },
                 label = { Text("全部") }
             )
             SegmentedButton(
                 selected = selectedMediaType == MediaType.VIDEO,
                 onClick = { selectedMediaType = MediaType.VIDEO },
+                shape = RoundedCornerShape(16.dp),
                 icon = { Icon(Icons.Filled.VideoLibrary, contentDescription = null) },
                 label = { Text(stringResource(R.string.videos)) }
             )
             SegmentedButton(
                 selected = selectedMediaType == MediaType.IMAGE,
                 onClick = { selectedMediaType = MediaType.IMAGE },
+                shape = RoundedCornerShape(16.dp),
                 icon = { Icon(Icons.Filled.Image, contentDescription = null) },
                 label = { Text(stringResource(R.string.images)) }
             )
             SegmentedButton(
                 selected = selectedMediaType == MediaType.AUDIO,
                 onClick = { selectedMediaType = MediaType.AUDIO },
+                shape = RoundedCornerShape(16.dp),
                 icon = { Icon(Icons.Filled.Album, contentDescription = null) },
                 label = { Text(stringResource(R.string.audios)) }
             )

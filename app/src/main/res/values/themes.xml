@@ -18,30 +18,14 @@
         <!-- Error color. -->
         <item name="colorError">@color/error</item>
         <item name="colorOnError">@color/on_error</item>
-        <!-- Typography styles. -->
-        <item name="textAppearanceHeadline1">@style/TextAppearance.XSaver.Headline1</item>
-        <item name="textAppearanceHeadline2">@style/TextAppearance.XSaver.Headline2</item>
-        <item name="textAppearanceHeadline3">@style/TextAppearance.XSaver.Headline3</item>
-        <item name="textAppearanceHeadline4">@style/TextAppearance.XSaver.Headline4</item>
-        <item name="textAppearanceHeadline5">@style/TextAppearance.XSaver.Headline5</item>
-        <item name="textAppearanceHeadline6">@style/TextAppearance.XSaver.Headline6</item>
-        <item name="textAppearanceSubtitle1">@style/TextAppearance.XSaver.Subtitle1</item>
-        <item name="textAppearanceSubtitle2">@style/TextAppearance.XSaver.Subtitle2</item>
-        <item name="textAppearanceBody1">@style/TextAppearance.XSaver.Body1</item>
-        <item name="textAppearanceBody2">@style/TextAppearance.XSaver.Body2</item>
-        <item name="textAppearanceButton">@style/TextAppearance.XSaver.Button</item>
-        <item name="textAppearanceCaption">@style/TextAppearance.XSaver.Caption</item>
-        <item name="textAppearanceOverline">@style/TextAppearance.XSaver.Overline</item>
         <!-- Elevation styles. -->
         <item name="elevationOverlayEnabled">true</item>
         <!-- Window styles. -->
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
-        <item name="windowSplashScreenBackground">@color/primary</item>
-        <item name="windowSplashScreenTransitionIconBackground">@color/white</item>
-        <!-- Material 3 motion settings -->
-        <item name="motionSystemUserInteractionMode">enhanced</item>
+        <!-- Android 12+ Splash Screen attributes must be framework-prefixed -->
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenBackground">@color/primary</item>
     </style>
 
     <style name="Theme.XSaver.NoActionBar" parent="Theme.XSaver">
@@ -49,18 +33,5 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <!-- Text styles -->
-    <style name="TextAppearance.XSaver.Headline1" parent="TextAppearance.Material3.Headline1" />
-    <style name="TextAppearance.XSaver.Headline2" parent="TextAppearance.Material3.Headline2" />
-    <style name="TextAppearance.XSaver.Headline3" parent="TextAppearance.Material3.Headline3" />
-    <style name="TextAppearance.XSaver.Headline4" parent="TextAppearance.Material3.Headline4" />
-    <style name="TextAppearance.XSaver.Headline5" parent="TextAppearance.Material3.Headline5" />
-    <style name="TextAppearance.XSaver.Headline6" parent="TextAppearance.Material3.Headline6" />
-    <style name="TextAppearance.XSaver.Subtitle1" parent="TextAppearance.Material3.Subtitle1" />
-    <style name="TextAppearance.XSaver.Subtitle2" parent="TextAppearance.Material3.Subtitle2" />
-    <style name="TextAppearance.XSaver.Body1" parent="TextAppearance.Material3.Body1" />
-    <style name="TextAppearance.XSaver.Body2" parent="TextAppearance.Material3.Body2" />
-    <style name="TextAppearance.XSaver.Button" parent="TextAppearance.Material3.Button" />
-    <style name="TextAppearance.XSaver.Caption" parent="TextAppearance.Material3.Caption" />
-    <style name="TextAppearance.XSaver.Overline" parent="TextAppearance.Material3.Overline" />
+    <!-- Remove invalid Material3 text appearances; Compose handles typography. -->
 </resources>
