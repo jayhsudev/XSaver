@@ -2,9 +2,9 @@ package org.jayhsu.xsaver.ui
 
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.Patterns
+import androidx.core.net.toUri
 
 class ShareReceiverActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,7 +29,8 @@ class ShareReceiverActivity : Activity() {
                 val matcher = Patterns.WEB_URL.matcher(text)
                 if (matcher.find()) {
                     val url = matcher.group()
-                    return try { Uri.parse(url).toString() } catch (_: Exception) { url }
+                    return try {
+                        url.toUri().toString() } catch (_: Exception) { url }
                 }
             }
         }

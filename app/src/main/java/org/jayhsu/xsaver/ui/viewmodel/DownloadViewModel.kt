@@ -2,7 +2,6 @@ package org.jayhsu.xsaver.ui.viewmodel
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Environment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,6 +17,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import java.io.File
 import javax.inject.Inject
+import androidx.core.net.toUri
 
 @HiltViewModel
 class DownloadViewModel @Inject constructor(
@@ -130,7 +130,7 @@ class DownloadViewModel @Inject constructor(
     // 在X上打开
     fun openInX(mediaItem: MediaItem) {
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse(mediaItem.sourceUrl)
+        intent.data = mediaItem.sourceUrl.toUri()
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
     }

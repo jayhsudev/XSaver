@@ -57,7 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.jayhsu.xsaver.R
-import org.jayhsu.xsaver.ui.components.MediaPreview
+import org.jayhsu.xsaver.ui.components.MediaResultItem
 import org.jayhsu.xsaver.ui.viewmodel.DownloadViewModel
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -70,12 +70,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.DrawerState
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.SheetState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -201,7 +195,7 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                     contentPadding = PaddingValues(16.dp)
                 ) {
                     items(mediaItems) { mediaItem ->
-                        MediaPreview(
+                        MediaResultItem(
                             mediaItem = mediaItem,
                             onDownloadClick = {
                                 viewModel.downloadMedia(mediaItem)
@@ -213,13 +207,16 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                                     context.startActivity(intent)
                                 }
                             },
-                            onOpenInXClick = {
-                                viewModel.openInX(mediaItem)
-                            },
+                            onOpenInXClick = { viewModel.openInX(mediaItem) },
                             onShowDownloadPathClick = {
                                 val path = viewModel.getDownloadPath(mediaItem)
-                                // 显示下载路径，可以使用Toast或Dialog
                                 Toast.makeText(context, "下载路径: $path", Toast.LENGTH_LONG).show()
+                            },
+                            onPreview = {
+                                val url = android.net.Uri.encode(mediaItem.url)
+                                val type = mediaItem.type.name
+                                val title = android.net.Uri.encode(mediaItem.title ?: "")
+                                navController.navigate("media?url=${url}&type=${type}&title=${title}")
                             }
                         )
                     }

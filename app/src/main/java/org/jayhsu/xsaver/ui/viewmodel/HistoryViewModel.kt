@@ -7,7 +7,6 @@ import android.os.Environment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.jayhsu.xsaver.data.model.MediaItem
-import org.jayhsu.xsaver.data.model.MediaType
 import org.jayhsu.xsaver.data.repository.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -18,6 +17,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
@@ -102,7 +102,7 @@ class HistoryViewModel @Inject constructor(
         val items = _mediaHistory.value.filter { it.id in selectedIds.value }
         if (items.isEmpty()) return
         // Build multiple share intent
-        val uris = ArrayList<android.net.Uri>()
+        val uris = ArrayList<Uri>()
         items.forEach { mediaItem ->
             val fileName = mediaItem.url.substringAfterLast('/').ifEmpty { "media_${System.currentTimeMillis()}" }
             val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "XSaver/$fileName")
@@ -129,7 +129,7 @@ class HistoryViewModel @Inject constructor(
     // 在X上打开
     fun openInX(mediaItem: MediaItem) {
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse(mediaItem.sourceUrl)
+        intent.data = mediaItem.sourceUrl.toUri()
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
     }

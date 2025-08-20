@@ -9,6 +9,5 @@ class XSaverApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Log.d("XSaverApplication", "Application started")
-        // 应用初始化代码
     }
 }

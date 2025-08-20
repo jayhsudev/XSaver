@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.core.os.bundleOf
 import org.jayhsu.xsaver.ui.ShareReceiverActivity.Companion.EXTRA_SHARED_LINK
 import org.jayhsu.xsaver.ui.navigation.AppNavigation
 import org.jayhsu.xsaver.ui.theme.XSaverTheme

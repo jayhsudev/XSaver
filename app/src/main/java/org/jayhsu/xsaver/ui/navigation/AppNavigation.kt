@@ -19,7 +19,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
@@ -229,7 +228,7 @@ fun AppNavigation(initialSharedLink: String? = null) {
                             }
                         }
                     )
-                } else {
+                } else if (currentRoute == Screen.Download.route) {
                     CenterAlignedTopAppBar(
                         title = { Text(text = stringResource(id = R.string.app_name)) },
                         navigationIcon = {
@@ -264,6 +263,17 @@ fun AppNavigation(initialSharedLink: String? = null) {
                             }
                         }
                     )
+                } else if (currentRoute == Screen.Media.route) {
+                    CenterAlignedTopAppBar(
+                        title = { Text("预览") },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                            }
+                        }
+                    )
+                } else {
+                    CenterAlignedTopAppBar(title = { Text(text = stringResource(id = R.string.app_name)) })
                 }
             }
         ) { padding ->
@@ -276,7 +286,38 @@ fun AppNavigation(initialSharedLink: String? = null) {
                     DownloadScreen(navController, initialSharedLink)
                 }
                 composable(Screen.History.route) {
-                    HistoryScreen()
+                    HistoryScreen(onPreview = { media ->
+                        val url = android.net.Uri.encode(media.url)
+                        val type = media.type.name
+                        val title = android.net.Uri.encode(media.title ?: "")
+                        navController.navigate("${Screen.Media.base}?url=${url}&type=${type}&title=${title}")
+                    })
+                }
+                composable(
+                    route = Screen.Media.route,
+                    arguments = listOf(
+                        androidx.navigation.navArgument("url") { type = androidx.navigation.NavType.StringType },
+                        androidx.navigation.navArgument("type") { type = androidx.navigation.NavType.StringType },
+                        androidx.navigation.navArgument("title") { type = androidx.navigation.NavType.StringType; defaultValue = "" }
+                    )
+                ) { backStackEntry ->
+                    val url = backStackEntry.arguments?.getString("url")
+                    val typeStr = backStackEntry.arguments?.getString("type")
+                    val title = backStackEntry.arguments?.getString("title")
+                    if (url != null && typeStr != null) {
+                        val media = org.jayhsu.xsaver.data.model.MediaItem(
+                            url = url,
+                            title = if (title.isNullOrBlank()) null else title,
+                            thumbnailUrl = null,
+                            type = org.jayhsu.xsaver.data.model.MediaType.valueOf(typeStr),
+                            size = null,
+                            duration = null,
+                            sourceUrl = url
+                        )
+                        org.jayhsu.xsaver.ui.screens.MediaItemScreen(media)
+                    } else {
+                        Text("无法加载媒体")
+                    }
                 }
             }
             // History sort dialog anchored at root
@@ -307,4 +348,7 @@ fun AppNavigation(initialSharedLink: String? = null) {
 sealed class Screen(val route: String) {
     object Download : Screen("download")
     object History : Screen("history")
+    object Media : Screen("media?url={url}&type={type}&title={title}") {
+        val base = "media"
+    }
 }

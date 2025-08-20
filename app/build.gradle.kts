@@ -86,6 +86,9 @@ dependencies {
     implementation(libs.accompanist.permissions)
     // DataStore Preferences
     implementation(libs.androidx.datastore.preferences)
+    // Media playback
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

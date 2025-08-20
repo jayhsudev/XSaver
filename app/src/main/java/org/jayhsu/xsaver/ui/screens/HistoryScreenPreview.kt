@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.jayhsu.xsaver.ui.components.MediaPreview
+import org.jayhsu.xsaver.ui.components.MediaResultItem
 import org.jayhsu.xsaver.ui.theme.XSaverTheme
 import org.jayhsu.xsaver.data.model.MediaItem
 import org.jayhsu.xsaver.data.model.MediaType
@@ -57,14 +57,12 @@ fun HistoryScreenPreview_WithItems() {
     XSaverTheme {
         LazyColumn(modifier = Modifier.fillMaxSize(), content = {
             items(items) { item ->
-                MediaPreview(
+                MediaResultItem(
                     mediaItem = item,
                     onDownloadClick = {},
-                    onDeleteClick = {},
                     onShareClick = {},
                     onOpenInXClick = {},
-                    onShowDownloadPathClick = {},
-                    isHistoryItem = true
+                    onShowDownloadPathClick = {}
                 )
             }
         })
