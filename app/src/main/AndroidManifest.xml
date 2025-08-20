@@ -45,6 +45,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Receive shares from X app or others -->
+        <activity
+            android:name="org.jayhsu.xsaver.ui.ShareReceiverActivity"
+            android:exported="true"
+            android:theme="@style/Theme.XSaver.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

@@ -1,0 +1,7 @@
+<resources>
+    <!-- Android 12+ Splash Screen attributes must be framework-prefixed -->
+    <style name="Theme.XSaver" parent="Theme.XSaver.Base">
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenBackground">@color/primary</item>
+    </style>
+</resources>

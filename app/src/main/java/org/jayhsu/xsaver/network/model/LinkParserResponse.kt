@@ -1,36 +1,39 @@
 package org.jayhsu.xsaver.network.model
 
-import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 // 链接解析API的响应
+@Serializable
 data class LinkParserResponse(
-    @SerializedName("success")
+    @SerialName("success")
     val success: Boolean,
 
-    @SerializedName("message")
+    @SerialName("message")
     val message: String? = null,
 
-    @SerializedName("data")
+    @SerialName("data")
     val data: List<MediaData> = emptyList()
 )
 
 // 媒体数据
+@Serializable
 data class MediaData(
-    @SerializedName("url")
+    @SerialName("url")
     val url: String,
 
-    @SerializedName("title")
+    @SerialName("title")
     val title: String? = null,
 
-    @SerializedName("thumbnail_url")
+    @SerialName("thumbnail_url")
     val thumbnailUrl: String? = null,
 
-    @SerializedName("type")
+    @SerialName("type")
     val type: String, // video, image, audio
 
-    @SerializedName("size")
+    @SerialName("size")
     val size: Float? = null,
 
-    @SerializedName("duration")
+    @SerialName("duration")
     val duration: Int? = null // 视频或音频的时长，单位秒
 )

@@ -31,7 +31,8 @@ abstract class DatabaseModule {
                 AppDatabase::class.java,
                 "xsaver_database"
             )
-            .fallbackToDestructiveMigration() // 在开发阶段允许破坏性迁移
+            // 在开发阶段允许破坏性迁移：全部表清空
+            .fallbackToDestructiveMigration(true)
             .build()
         }
 

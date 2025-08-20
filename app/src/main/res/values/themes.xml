@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.XSaver" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.XSaver.Base" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/on_primary</item>
@@ -23,10 +23,10 @@
         <!-- Window styles. -->
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-        <!-- Android 12+ Splash Screen attributes must be framework-prefixed -->
-        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
-        <item name="android:windowSplashScreenBackground">@color/primary</item>
     </style>
+
+    <!-- Public theme that composes the base; API-specific overrides live in values-v31 -->
+    <style name="Theme.XSaver" parent="Theme.XSaver.Base" />
 
     <style name="Theme.XSaver.NoActionBar" parent="Theme.XSaver">
         <item name="windowActionBar">false</item>

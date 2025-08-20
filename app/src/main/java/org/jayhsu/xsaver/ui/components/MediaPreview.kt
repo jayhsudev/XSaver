@@ -42,9 +42,9 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jayhsu.xsaver.data.model.MediaItem
 import org.jayhsu.xsaver.data.model.MediaType
-import kotlinx.coroutines.launch
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +55,10 @@ fun MediaPreview(
     onShareClick: () -> Unit = {},
     onOpenInXClick: () -> Unit = {},
     onShowDownloadPathClick: () -> Unit = {},
-    isHistoryItem: Boolean = false
+    isHistoryItem: Boolean = false,
+    showSelection: Boolean = false,
+    checked: Boolean = false,
+    onCheckedChange: (Boolean) -> Unit = {}
 ) {
     var showMenuSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -115,6 +118,17 @@ fun MediaPreview(
                     Icons.Filled.Share,
                     tint = androidx.compose.ui.graphics.Color.White,
                     contentDescription = "分享"
+                )
+            }
+
+            // 左上角多选复选框
+            if (showSelection) {
+                Checkbox(
+                    checked = checked,
+                    onCheckedChange = onCheckedChange,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
                 )
             }
         }

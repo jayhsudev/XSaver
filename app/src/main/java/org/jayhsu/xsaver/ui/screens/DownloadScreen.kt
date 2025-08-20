@@ -4,8 +4,11 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -63,10 +66,20 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SheetState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DownloadScreen(navController: NavHostController) {
+fun DownloadScreen(navController: NavHostController, initialSharedLink: String? = null) {
     val viewModel: DownloadViewModel = hiltViewModel()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -82,12 +95,40 @@ fun DownloadScreen(navController: NavHostController) {
     val mediaItems by viewModel.mediaItems.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val parseProgress by viewModel.parseProgress.collectAsState()
+    var showParseDialog by remember { mutableStateOf(false) }
+    var showResultSheet by remember { mutableStateOf(false) }
+    val selected = remember { mutableStateOf(setOf<String>()) }
+    var postText by remember { mutableStateOf("") }
+
+    // If launched with a shared link, parse it once
+    if (!initialSharedLink.isNullOrBlank()) {
+        // trigger parse and ignore if already loading or has items
+        if (!isLoading && mediaItems.isEmpty()) {
+            LaunchedEffect(initialSharedLink) {
+                viewModel.parseLink(initialSharedLink)
+            }
+        }
+    }
 
     // 处理链接解析结果
     error?.let {
         errorMessage = it
         showErrorDialog = true
         viewModel.clearError()
+    }
+
+    // When parsing starts/finishes, control dialog and sheet
+    if (isLoading && !showParseDialog) {
+        showParseDialog = true
+        viewModel.resetParseProgress()
+    }
+    if (!isLoading && showParseDialog) {
+        showParseDialog = false
+        // Open results sheet if we have items
+        if (mediaItems.isNotEmpty()) {
+            showResultSheet = true
+        }
     }
 
     Scaffold(
@@ -130,6 +171,10 @@ fun DownloadScreen(navController: NavHostController) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = { navController.navigate("history") }) {
+                        Text("查看全部记录")
+                    }
                 }
             } else if (isLoading) {
                 Column(
@@ -178,6 +223,76 @@ fun DownloadScreen(navController: NavHostController) {
                             }
                         )
                     }
+                    item {
+                        Spacer(Modifier.height(16.dp))
+                        Button(onClick = { navController.navigate("history") }, modifier = Modifier.fillMaxWidth()) {
+                            Text("查看全部记录")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 解析进度对话框
+    if (showParseDialog) {
+        AlertDialog(
+            onDismissRequest = { /* block while parsing */ },
+            title = { Text("解析链接中") },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    LinearProgressIndicator(progress = { parseProgress / 100f }, modifier = Modifier.fillMaxWidth())
+                    Text(text = "${parseProgress}%", modifier = Modifier.padding(top = 8.dp))
+                }
+            },
+            confirmButton = {},
+            dismissButton = {}
+        )
+    }
+
+    // 结果全屏BottomSheet（Drawer样式）
+    if (showResultSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showResultSheet = false },
+            sheetState = sheetState
+        ) {
+            Column(modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "识别结果", style = MaterialTheme.typography.titleMedium)
+                    IconButton(onClick = { showResultSheet = false }) { Icon(Icons.Filled.Close, contentDescription = "关闭") }
+                }
+                if (postText.isNotBlank()) {
+                    Text(text = postText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 8.dp))
+                }
+                Text(text = "媒体（可多选）", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    itemsIndexed(mediaItems) { _, item ->
+                        val checked = selected.value.contains(item.id)
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = checked, onCheckedChange = { isChecked ->
+                                selected.value = if (isChecked) selected.value + item.id else selected.value - item.id
+                            })
+                            Text(text = item.title ?: item.url, modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
+                Button(
+                    onClick = {
+                        val toDownload = mediaItems.filter { selected.value.contains(it.id) }.ifEmpty { mediaItems }
+                        viewModel.downloadMediaList(toDownload)
+                        showResultSheet = false
+                        successMessage = "已添加${toDownload.size}个下载任务"
+                        showSuccessDialog = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Text("下载所选")
                 }
             }
         }

@@ -14,13 +14,15 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
 class DownloadViewModel @Inject constructor(
     private val repository: MediaRepository,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : ViewModel() {
     private val _mediaItems = MutableStateFlow<List<MediaItem>>(emptyList())
     val mediaItems: StateFlow<List<MediaItem>> = _mediaItems
@@ -31,6 +33,10 @@ class DownloadViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    private val _parseProgress = MutableStateFlow(0)
+    val parseProgress: StateFlow<Int> = _parseProgress
+    private var progressJob: Job? = null
+
     fun parseLink(link: String) {
         if (link.isBlank()) {
             _error.value = "链接不能为空"
@@ -40,12 +46,23 @@ class DownloadViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
+            _parseProgress.value = 0
+            progressJob?.cancel()
+            progressJob = launch {
+                // Fake determinate progress up to 90% while parsing
+                while (_isLoading.value && _parseProgress.value < 90) {
+                    delay(120)
+                    _parseProgress.value = (_parseProgress.value + 3).coerceAtMost(90)
+                }
+            }
             try {
                 val mediaItems = repository.parseLink(link.trim())
                 _mediaItems.value = mediaItems
             } catch (e: Exception) {
                 _error.value = e.message ?: "解析链接失败"
             } finally {
+                progressJob?.cancel()
+                _parseProgress.value = 100
                 _isLoading.value = false
             }
         }
@@ -103,6 +120,8 @@ class DownloadViewModel @Inject constructor(
         _error.value = null
     }
 
+    fun resetParseProgress() { _parseProgress.value = 0 }
+
     // 分享媒体
     fun shareMedia(mediaItem: MediaItem): Intent? {
         return repository.shareMedia(mediaItem)
@@ -124,5 +143,19 @@ class DownloadViewModel @Inject constructor(
             downloadDir.mkdirs()
         }
         return "${downloadDir}/${fileName}"
+    }
+
+    fun downloadMediaList(items: List<MediaItem>) {
+        viewModelScope.launch {
+            for (item in items) {
+                try {
+                    val fileName = extractFileName(item)
+                    val success = repository.downloadMedia(item.url, fileName)
+                    if (success) repository.saveMediaItem(item)
+                } catch (e: Exception) {
+                    _error.value = e.message ?: "下载过程中发生错误"
+                }
+            }
+        }
     }
 }

@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">XSaver</string>
+    <string name="paste_link_hint">Paste X link</string>
+    <string name="download">Download</string>
+    <string name="downloading">Downloading...</string>
+    <string name="download_complete">Download complete</string>
+    <string name="download_failed">Download failed</string>
+    <string name="no_media_found">No media found</string>
+    <string name="invalid_link">Invalid link</string>
+    <string name="videos">Videos</string>
+    <string name="images">Images</string>
+    <string name="audios">Audios</string>
+    <string name="history">History</string>
+    <string name="empty_history">No history yet</string>
+    <string name="permission_required">Permission required</string>
+    <string name="grant_permission">Grant</string>
+    <string name="save_to">Save to</string>
+    <string name="download_path">/XSaver/</string>
+</resources>

@@ -20,7 +20,7 @@ import javax.inject.Singleton
 class MediaRepositoryImpl @Inject constructor(
     private val mediaDao: MediaDao,
     private val apiService: ApiService,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : MediaRepository {
 
     override suspend fun parseLink(link: String): List<MediaItem> {

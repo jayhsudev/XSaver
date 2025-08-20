@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.os.bundleOf
+import org.jayhsu.xsaver.ui.ShareReceiverActivity.Companion.EXTRA_SHARED_LINK
 import org.jayhsu.xsaver.ui.navigation.AppNavigation
 import org.jayhsu.xsaver.ui.theme.XSaverTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -40,7 +42,12 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation()
+                    val sharedLink = intent?.getStringExtra(EXTRA_SHARED_LINK)
+                    AppNavigation(initialSharedLink = sharedLink)
+                    if (!sharedLink.isNullOrBlank()) {
+                        // prevent re-consume on configuration changes
+                        intent?.removeExtra(EXTRA_SHARED_LINK)
+                    }
                 }
             }
         }

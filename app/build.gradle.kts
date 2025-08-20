@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -16,8 +17,9 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Load API base URL from gradle.properties with a sane default and expose via BuildConfig
+        val apiBaseUrl = providers.gradleProperty("API_BASE_URL").orElse("https://api.yourdomain.com").get()
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
     buildTypes {
@@ -25,7 +27,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -42,8 +44,8 @@ android {
         }
     }
     buildFeatures {
-    compose = true
-    buildConfig = true
+        compose = true
+        buildConfig = true
     }
 }
 
@@ -60,6 +62,8 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     // Material Components (for XML themes/styles)
     implementation(libs.material)
+    // AppCompat for ApplicationLocales
+    implementation(libs.androidx.appcompat)
     // Navigation
     implementation(libs.androidx.navigation.compose)
     // Hilt Dependency Injection
@@ -70,7 +74,8 @@ dependencies {
     implementation(libs.coil.kt.coil.compose)
     // Networking
     implementation(libs.squareup.retrofit)
-    implementation(libs.squareup.converter.gson)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit2.kotlinx.serialization.converter)
     implementation(libs.squareup.okhttp)
     implementation(libs.squareup.logging.interceptor)
     // Room Database
@@ -79,6 +84,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     // Permissions
     implementation(libs.accompanist.permissions)
+    // DataStore Preferences
+    implementation(libs.androidx.datastore.preferences)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
