@@ -6,18 +6,14 @@ import android.os.Environment
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.SelectAll
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Contrast
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Cached
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
@@ -107,19 +103,18 @@ fun AppNavigation(initialSharedLink: String? = null) {
                         modifier = Modifier.padding(start = 56.dp, top = 4.dp, bottom = 16.dp)
                     )
 
-                    // Settings placeholders
                     HorizontalDivider()
                     NavigationDrawerItem(
                         label = { Text(stringResource(R.string.theme)) },
                         selected = false,
                         onClick = { showThemeDialog = true },
-                        icon = { /* no icon */ }
+                        icon = { Icon(Icons.Filled.Contrast, contentDescription = null) }
                     )
                     NavigationDrawerItem(
                         label = { Text(stringResource(R.string.language)) },
                         selected = false,
                         onClick = { showLanguageDialog = true },
-                        icon = { /* no icon */ }
+                        icon = { Icon(Icons.Filled.Language, contentDescription = null) }
                     )
                     NavigationDrawerItem(
                         label = { Text(stringResource(R.string.clear_cache)) },
@@ -131,7 +126,14 @@ fun AppNavigation(initialSharedLink: String? = null) {
                                 context.externalCacheDir?.deleteRecursively()
                             } catch (_: Exception) {}
                         },
-                        icon = { /* no icon */ }
+                        icon = { Icon(Icons.Filled.Cached, contentDescription = null)  }
+                    )
+                    HorizontalDivider()
+                    NavigationDrawerItem(
+                        label = { Text(stringResource(R.string.about)) },
+                        selected = false,
+                        onClick = { showLanguageDialog = true },
+                        icon = { Icon(Icons.Filled.Info, contentDescription = null) }
                     )
                 }
                 // Theme dialog

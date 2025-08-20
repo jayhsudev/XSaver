@@ -3,10 +3,11 @@ package org.jayhsu.xsaver.ui
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
@@ -14,9 +15,14 @@ import org.jayhsu.xsaver.ui.ShareReceiverActivity.Companion.EXTRA_SHARED_LINK
 import org.jayhsu.xsaver.ui.navigation.AppNavigation
 import org.jayhsu.xsaver.ui.theme.XSaverTheme
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import org.jayhsu.xsaver.ui.viewmodel.SettingsViewModel
+import org.jayhsu.xsaver.ui.viewmodel.ThemeMode
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -35,7 +41,15 @@ class MainActivity : ComponentActivity() {
         requestRequiredPermissions()
 
         setContent {
-            XSaverTheme {
+            // Observe theme mode from SettingsViewModel and apply to Compose theme
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
+            val themeMode by settingsViewModel.themeMode.collectAsState()
+            val darkTheme = when (themeMode) {
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+            XSaverTheme(darkTheme = darkTheme) {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
