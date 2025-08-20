@@ -33,17 +33,17 @@ private fun mockAudio(): MediaItem = MediaItem(
 @Preview(showBackground = true, showSystemUi = false)
 @Composable
 fun MediaItemScreen_Image_Preview() {
-    XSaverTheme { MediaItemScreen(media = mockImage()) }
+    XSaverTheme { MediaScreen(media = mockImage()) }
 }
 
 @Preview(showBackground = true, showSystemUi = false)
 @Composable
 fun MediaItemScreen_Video_Preview() {
-    XSaverTheme { MediaItemScreen(media = mockVideo()) }
+    XSaverTheme { MediaScreen(media = mockVideo()) }
 }
 
 @Preview(showBackground = true, showSystemUi = false)
 @Composable
 fun MediaItemScreen_Audio_Preview() {
-    XSaverTheme { MediaItemScreen(media = mockAudio()) }
+    XSaverTheme { MediaScreen(media = mockAudio()) }
 }

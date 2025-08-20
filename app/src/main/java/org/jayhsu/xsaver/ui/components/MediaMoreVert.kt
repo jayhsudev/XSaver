@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,7 +41,7 @@ fun MediaMoreVert(
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("在X上打开") }
+            ) { Text(stringResource(org.jayhsu.xsaver.R.string.open_in_x)) }
 
             TextButton(
                 onClick = {
@@ -48,7 +49,7 @@ fun MediaMoreVert(
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("分享") }
+            ) { Text(stringResource(org.jayhsu.xsaver.R.string.share)) }
 
             TextButton(
                 onClick = {
@@ -56,7 +57,7 @@ fun MediaMoreVert(
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("下载路径") }
+            ) { Text(stringResource(org.jayhsu.xsaver.R.string.download_path_label)) }
 
             TextButton(
                 onClick = {
@@ -64,7 +65,7 @@ fun MediaMoreVert(
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("删除") }
+            ) { Text(stringResource(org.jayhsu.xsaver.R.string.delete)) }
         }
     }
 }

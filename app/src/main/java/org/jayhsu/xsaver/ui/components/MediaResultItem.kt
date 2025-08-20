@@ -35,7 +35,9 @@ import coil3.compose.AsyncImage
 import org.jayhsu.xsaver.data.model.MediaItem
 import org.jayhsu.xsaver.data.model.MediaType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.res.stringResource
 import org.jayhsu.xsaver.ui.theme.XSaverTheme
+import org.jayhsu.xsaver.R
 
 @Composable
 fun MediaResultItem(
@@ -84,19 +86,19 @@ fun MediaResultItem(
                 }
             }
             IconButton(onClick = onShareClick, modifier = Modifier.align(Alignment.TopEnd)) {
-                Icon(Icons.Filled.Share, contentDescription = "分享", tint = Color.White)
+                Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.share), tint = Color.White)
             }
         }
 
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
             Text(
-                text = mediaItem.title ?: "未命名",
+                text = mediaItem.title ?: stringResource(R.string.unnamed),
                 style = MaterialTheme.typography.titleMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = mediaItem.size?.let { "${it}MB" } ?: mediaItem.sourceUrl,
+                text = mediaItem.size?.let { stringResource(R.string.size_in_mb, it) } ?: mediaItem.sourceUrl,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -111,11 +113,11 @@ fun MediaResultItem(
         ) {
             TextButton(onClick = onDownloadClick) {
                 Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                Text("下载")
+                Text(stringResource(R.string.download))
             }
             Row {
-                TextButton(onClick = onOpenInXClick) { Text("在X打开") }
-                TextButton(onClick = onShowDownloadPathClick) { Text("下载路径") }
+                TextButton(onClick = onOpenInXClick) { Text(stringResource(R.string.open_in_x)) }
+                TextButton(onClick = onShowDownloadPathClick) { Text(stringResource(R.string.download_path_label)) }
             }
         }
     }

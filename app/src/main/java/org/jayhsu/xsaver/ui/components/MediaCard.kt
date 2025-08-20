@@ -34,6 +34,8 @@ import org.jayhsu.xsaver.data.model.MediaItem
 import org.jayhsu.xsaver.data.model.MediaType
 import androidx.compose.ui.tooling.preview.Preview
 import org.jayhsu.xsaver.ui.theme.XSaverTheme
+import androidx.compose.ui.res.stringResource
+import org.jayhsu.xsaver.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,11 +96,11 @@ fun MediaCard(
 
             // 右上角：分享
             IconButton(onClick = onShare, modifier = Modifier.align(Alignment.TopEnd)) {
-                Icon(Icons.Filled.Share, contentDescription = "分享", tint = Color.White)
+                Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.share), tint = Color.White)
             }
             // 右下角：更多 -> BottomSheet
             IconButton(onClick = { showSheet = true }, modifier = Modifier.align(Alignment.BottomEnd)) {
-                Icon(Icons.Filled.MoreVert, contentDescription = "更多", tint = Color.White)
+                Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more), tint = Color.White)
             }
         }
     }

@@ -38,6 +38,8 @@ import org.jayhsu.xsaver.data.model.MediaItem
 import org.jayhsu.xsaver.data.model.MediaType
 import androidx.compose.ui.tooling.preview.Preview
 import org.jayhsu.xsaver.ui.theme.XSaverTheme
+import androidx.compose.ui.res.stringResource
+import org.jayhsu.xsaver.R
 
 @Composable
 fun MediaLane(
@@ -90,13 +92,13 @@ fun MediaLane(
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = mediaItem.title ?: "未命名",
+                        text = mediaItem.title ?: stringResource(R.string.unnamed),
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = onShare) { Icon(Icons.Filled.Share, contentDescription = "分享") }
+                    IconButton(onClick = onShare) { Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.share)) }
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
@@ -107,7 +109,7 @@ fun MediaLane(
                     overflow = TextOverflow.Ellipsis
                 )
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    IconButton(onClick = { showSheet = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "更多") }
+                    IconButton(onClick = { showSheet = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more)) }
                 }
             }
         }

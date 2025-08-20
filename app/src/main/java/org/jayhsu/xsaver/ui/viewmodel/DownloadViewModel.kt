@@ -39,7 +39,7 @@ class DownloadViewModel @Inject constructor(
 
     fun parseLink(link: String) {
         if (link.isBlank()) {
-            _error.value = "链接不能为空"
+            _error.value = context.getString(org.jayhsu.xsaver.R.string.link_empty)
             return
         }
         
@@ -59,7 +59,7 @@ class DownloadViewModel @Inject constructor(
                 val mediaItems = repository.parseLink(link.trim())
                 _mediaItems.value = mediaItems
             } catch (e: Exception) {
-                _error.value = e.message ?: "解析链接失败"
+                _error.value = e.message ?: context.getString(org.jayhsu.xsaver.R.string.parse_link_failed)
             } finally {
                 progressJob?.cancel()
                 _parseProgress.value = 100
@@ -78,10 +78,10 @@ class DownloadViewModel @Inject constructor(
                     // 下载成功，保存到数据库
                     repository.saveMediaItem(mediaItem)
                 } else {
-                    _error.value = "下载失败"
+                    _error.value = context.getString(org.jayhsu.xsaver.R.string.download_failed)
                 }
             } catch (e: Exception) {
-                _error.value = e.message ?: "下载过程中发生错误"
+                _error.value = e.message ?: context.getString(org.jayhsu.xsaver.R.string.download_error_during)
             }
         }
     }
@@ -153,7 +153,7 @@ class DownloadViewModel @Inject constructor(
                     val success = repository.downloadMedia(item.url, fileName)
                     if (success) repository.saveMediaItem(item)
                 } catch (e: Exception) {
-                    _error.value = e.message ?: "下载过程中发生错误"
+                    _error.value = e.message ?: context.getString(org.jayhsu.xsaver.R.string.download_error_during)
                 }
             }
         }

@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,7 +72,7 @@ fun AppNavigation(initialSharedLink: String? = null) {
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val themeMode by settingsViewModel.themeMode.collectAsState()
     val language by settingsViewModel.language.collectAsState()
-    val latestItem = mediaHistory.firstOrNull()
+    val latestItem = remember(mediaHistory) { mediaHistory.maxByOrNull { it.downloadedAt } }
     val isMultiSelect by historyViewModel.isMultiSelect.collectAsState()
     val selectedIds by historyViewModel.selectedIds.collectAsState()
     val sortBy by historyViewModel.sortBy.collectAsState()
@@ -90,17 +89,19 @@ fun AppNavigation(initialSharedLink: String? = null) {
                         selected = currentRoute == Screen.History.route,
                         onClick = {
                             scope.launch { drawerState.close() }
-                            navController.navigate(Screen.History.route)
+                            navController.navigate(Screen.History.route) {
+                                launchSingleTop = true
+                            }
                         },
                         icon = { Icon(Icons.Filled.History, contentDescription = null) }
                     )
                     // Show media storage path under the history item
-                    val basePath = run {
+                    val basePath = remember {
                         val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "XSaver")
                         dir.absolutePath
                     }
                     Text(
-                        text = "路径: $basePath",
+                        text = stringResource(R.string.path_label, basePath),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 56.dp, top = 4.dp, bottom = 16.dp)
@@ -109,19 +110,19 @@ fun AppNavigation(initialSharedLink: String? = null) {
                     // Settings placeholders
                     HorizontalDivider()
                     NavigationDrawerItem(
-                        label = { Text("主题") },
+                        label = { Text(stringResource(R.string.theme)) },
                         selected = false,
                         onClick = { showThemeDialog = true },
                         icon = { /* no icon */ }
                     )
                     NavigationDrawerItem(
-                        label = { Text("语言") },
+                        label = { Text(stringResource(R.string.language)) },
                         selected = false,
                         onClick = { showLanguageDialog = true },
                         icon = { /* no icon */ }
                     )
                     NavigationDrawerItem(
-                        label = { Text("清除缓存") },
+                        label = { Text(stringResource(R.string.clear_cache)) },
                         selected = false,
                         onClick = {
                             // Clear internal and external cache
@@ -135,14 +136,14 @@ fun AppNavigation(initialSharedLink: String? = null) {
                 }
                 // Theme dialog
                 if (showThemeDialog) {
-                    AlertDialog(
+            AlertDialog(
                         onDismissRequest = { showThemeDialog = false },
-                        title = { Text("主题") },
+            title = { Text(stringResource(R.string.theme)) },
                         text = {
                             Column {
-                                TextButton(onClick = { settingsViewModel.setThemeMode(ThemeMode.LIGHT); showThemeDialog = false }) { Text("亮色模式") }
-                                TextButton(onClick = { settingsViewModel.setThemeMode(ThemeMode.DARK); showThemeDialog = false }) { Text("暗色模式") }
-                                TextButton(onClick = { settingsViewModel.setThemeMode(ThemeMode.SYSTEM); showThemeDialog = false }) { Text("系统预设") }
+                TextButton(onClick = { settingsViewModel.setThemeMode(ThemeMode.LIGHT); showThemeDialog = false }) { Text(stringResource(R.string.theme_light)) }
+                TextButton(onClick = { settingsViewModel.setThemeMode(ThemeMode.DARK); showThemeDialog = false }) { Text(stringResource(R.string.theme_dark)) }
+                TextButton(onClick = { settingsViewModel.setThemeMode(ThemeMode.SYSTEM); showThemeDialog = false }) { Text(stringResource(R.string.theme_system)) }
                             }
                         },
                         confirmButton = {},
@@ -153,11 +154,11 @@ fun AppNavigation(initialSharedLink: String? = null) {
                 if (showLanguageDialog) {
                     AlertDialog(
                         onDismissRequest = { showLanguageDialog = false },
-                        title = { Text("语言") },
+            title = { Text(stringResource(R.string.language)) },
                         text = {
                             Column {
-                                TextButton(onClick = { settingsViewModel.setLanguage("zh"); showLanguageDialog = false }) { Text("简体中文") }
-                                TextButton(onClick = { settingsViewModel.setLanguage("en"); showLanguageDialog = false }) { Text("English") }
+                TextButton(onClick = { settingsViewModel.setLanguage("zh"); showLanguageDialog = false }) { Text(stringResource(R.string.language_zh)) }
+                TextButton(onClick = { settingsViewModel.setLanguage("en"); showLanguageDialog = false }) { Text(stringResource(R.string.language_en)) }
                             }
                         },
                         confirmButton = {},
@@ -167,115 +168,9 @@ fun AppNavigation(initialSharedLink: String? = null) {
             }
         }
     ) {
+        TopBarHost {
         Scaffold(
-            topBar = {
-                if (currentRoute == Screen.History.route) {
-                    CenterAlignedTopAppBar(
-                        title = {
-                            if (isMultiSelect) Text("已选择 ${selectedIds.size} 项")
-                            else Text(text = stringResource(id = R.string.history))
-                        },
-                        navigationIcon = {
-                            if (isMultiSelect) {
-                                IconButton(onClick = { historyViewModel.setMultiSelect(false) }) {
-                                    Icon(Icons.Filled.Close, contentDescription = "取消多选")
-                                }
-                            } else {
-                                IconButton(onClick = {
-                                    scope.launch { drawerState.open() }
-                                    // Navigate back to Download
-                                    navController.navigate(Screen.Download.route) {
-                                        popUpTo(Screen.Download.route) { inclusive = false }
-                                        launchSingleTop = true
-                                    }
-                                }) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                                }
-                            }
-                        },
-                        actions = {
-                            if (isMultiSelect) {
-                                IconButton(onClick = { historyViewModel.selectAll() }) {
-                                    Icon(Icons.Filled.SelectAll, contentDescription = "全选")
-                                }
-                            } else {
-                                IconButton(onClick = { showMenu = true }) {
-                                    Icon(Icons.Filled.MoreVert, contentDescription = "更多")
-                                }
-                                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                                    androidx.compose.material3.DropdownMenuItem(
-                                        text = { Text("文件排序") },
-                                        onClick = {
-                                            showMenu = false
-                                            showSortDialog = true
-                                        }
-                                    )
-                                    androidx.compose.material3.DropdownMenuItem(
-                                        text = { Text("多选") },
-                                        onClick = {
-                                            showMenu = false
-                                            historyViewModel.setMultiSelect(true)
-                                        }
-                                    )
-                                    androidx.compose.material3.DropdownMenuItem(
-                                        text = { Text("视图切换（列表/网格）") },
-                                        onClick = {
-                                            showMenu = false
-                                            historyViewModel.toggleViewMode()
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    )
-                } else if (currentRoute == Screen.Download.route) {
-                    CenterAlignedTopAppBar(
-                        title = { Text(text = stringResource(id = R.string.app_name)) },
-                        navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(Icons.Filled.Menu, contentDescription = "打开侧边栏")
-                            }
-                        },
-                        actions = {
-                            IconButton(
-                                onClick = {
-                                    latestItem?.let { item ->
-                                        val uri = item.sourceUrl.toUri()
-                                        // Try open X app first, fallback to browser
-                                        val candidates = listOf("com.twitter.android", "com.x.android")
-                                        var launched = false
-                                        for (pkg in candidates) {
-                                            try {
-                                                val intent = Intent(Intent.ACTION_VIEW, uri).apply { setPackage(pkg) }
-                                                context.startActivity(intent)
-                                                launched = true
-                                                break
-                                            } catch (_: ActivityNotFoundException) {}
-                                        }
-                                        if (!launched) {
-                                            val intent = Intent(Intent.ACTION_VIEW, uri)
-                                            try { context.startActivity(intent) } catch (_: Exception) {}
-                                        }
-                                    }
-                                },
-                            ) {
-                                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "打开X应用")
-                            }
-                        }
-                    )
-                } else if (currentRoute == Screen.Media.route) {
-                    CenterAlignedTopAppBar(
-                        title = { Text("预览") },
-                        navigationIcon = {
-                            IconButton(onClick = { navController.popBackStack() }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                            }
-                        }
-                    )
-                } else {
-                    CenterAlignedTopAppBar(title = { Text(text = stringResource(id = R.string.app_name)) })
-                }
-            }
+            topBar = { RenderTopBar(LocalTopBarSpec.current) }
         ) { padding ->
             NavHost(
                 navController = navController,
@@ -283,15 +178,51 @@ fun AppNavigation(initialSharedLink: String? = null) {
                 modifier = Modifier.padding(padding)
             ) {
                 composable(Screen.Download.route) {
-                    DownloadScreen(navController, initialSharedLink)
+                    DownloadScreen(
+                        navController = navController,
+                        initialSharedLink = initialSharedLink,
+                        onOpenDrawer = { scope.launch { drawerState.open() } },
+                        onOpenLatestX = {
+                            latestItem?.let { item ->
+                                val uri = item.sourceUrl.toUri()
+                                val candidates = listOf("com.twitter.android", "com.x.android")
+                                var launched = false
+                                for (pkg in candidates) {
+                                    try {
+                                        val intent = Intent(Intent.ACTION_VIEW, uri).apply { setPackage(pkg) }
+                                        context.startActivity(intent)
+                                        launched = true
+                                        break
+                                    } catch (_: ActivityNotFoundException) {}
+                                }
+                                if (!launched) {
+                                    val intent = Intent(Intent.ACTION_VIEW, uri)
+                                    try { context.startActivity(intent) } catch (_: Exception) {}
+                                }
+                            }
+                        }
+                    )
                 }
                 composable(Screen.History.route) {
-                    HistoryScreen(onPreview = { media ->
+                    HistoryScreen(
+                        onPreview = { media ->
                         val url = android.net.Uri.encode(media.url)
                         val type = media.type.name
                         val title = android.net.Uri.encode(media.title ?: "")
-                        navController.navigate("${Screen.Media.base}?url=${url}&type=${type}&title=${title}")
-                    })
+                        navController.navigate("${Screen.Media.base}?url=${url}&type=${type}&title=${title}") {
+                            launchSingleTop = true
+                        }
+                        },
+                        onBack = {
+                            val popped = navController.popBackStack()
+                            if (!popped) {
+                                navController.navigate(Screen.Download.route) {
+                                    popUpTo(Screen.Download.route) { inclusive = false }
+                                    launchSingleTop = true
+                                }
+                            }
+                        }
+                    )
                 }
                 composable(
                     route = Screen.Media.route,
@@ -314,9 +245,9 @@ fun AppNavigation(initialSharedLink: String? = null) {
                             duration = null,
                             sourceUrl = url
                         )
-                        org.jayhsu.xsaver.ui.screens.MediaItemScreen(media)
+                        org.jayhsu.xsaver.ui.screens.MediaScreen(media, onBack = { navController.popBackStack() })
                     } else {
-                        Text("无法加载媒体")
+                        Text(stringResource(R.string.cannot_load_media))
                     }
                 }
             }
@@ -324,24 +255,25 @@ fun AppNavigation(initialSharedLink: String? = null) {
             if (currentRoute == Screen.History.route && showSortDialog) {
                 AlertDialog(
                     onDismissRequest = { showSortDialog = false },
-                    title = { Text("文件排序") },
+                    title = { Text(stringResource(R.string.file_sort)) },
                     text = {
                         Column {
                             TextButton(onClick = {
                                 historyViewModel.setSortBy(SortBy.DownloadTime)
                                 showSortDialog = false
-                            }) { Text("按下载时间") }
+                            }) { Text(stringResource(R.string.sort_by_download_time)) }
                             TextButton(onClick = {
                                 historyViewModel.setSortBy(SortBy.FileSize)
                                 showSortDialog = false
-                            }) { Text("按文件大小") }
+                            }) { Text(stringResource(R.string.sort_by_file_size)) }
                         }
                     },
                     confirmButton = {},
                     dismissButton = {}
                 )
             }
-        }
+    }
+    }
     }
 }
 

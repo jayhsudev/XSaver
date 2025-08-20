@@ -118,7 +118,7 @@ class HistoryViewModel @Inject constructor(
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(Intent.createChooser(intent, "分享媒体"))
+    context.startActivity(Intent.createChooser(intent, context.getString(org.jayhsu.xsaver.R.string.share_media)))
     }
 
     // 分享媒体

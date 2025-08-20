@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.VideoLibrary
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,10 +47,20 @@ import org.jayhsu.xsaver.ui.components.MediaLane
 import org.jayhsu.xsaver.ui.viewmodel.HistoryViewModel
 import org.jayhsu.xsaver.ui.viewmodel.HistoryViewModel.SortBy
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import org.jayhsu.xsaver.ui.navigation.LocalTopBarController
+import org.jayhsu.xsaver.ui.navigation.TopBarSpec
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}) {
+fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) {
     val viewModel: HistoryViewModel = hiltViewModel()
     val context = LocalContext.current
     val mediaHistory by viewModel.mediaHistory.collectAsState()
@@ -61,6 +70,60 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}) {
     var selectedMediaType by remember { mutableStateOf<MediaType>(MediaType.VIDEO) } // 默认视频
     var showDeleteDialog by remember { mutableStateOf(false) }
     var mediaToDelete by remember { mutableStateOf<MediaItem?>(null) }
+    // Set TopBar via provider
+    val topBarController = LocalTopBarController.current
+    val topBarOwner = remember { Any() }
+    var showMenu by remember { mutableStateOf(false) }
+    var showSortDialogLocal by remember { mutableStateOf(false) }
+    // Clear on screen exit，使用 owner 防止被其它页面误清理
+    DisposableEffect(topBarOwner) {
+        onDispose { topBarController.setFor(topBarOwner, null) }
+    }
+    // Update top bar spec on relevant state changes without clearing it mid-frame
+    LaunchedEffect(isMultiSelect, selectedIds.size) {
+        topBarController.setFor(topBarOwner,
+            TopBarSpec(
+                title = {
+                    if (isMultiSelect) Text(stringResource(R.string.selected_count_format, selectedIds.size))
+                    else Text(text = stringResource(id = R.string.history))
+                },
+                navigationIcon = {
+                    if (isMultiSelect) {
+                        IconButton(onClick = { viewModel.setMultiSelect(false) }) {
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel_multi_select))
+                        }
+                    } else {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        }
+                    }
+                },
+                actions = {
+                    if (isMultiSelect) {
+                        IconButton(onClick = { viewModel.selectAll() }) {
+                            Icon(Icons.Filled.SelectAll, contentDescription = stringResource(R.string.select_all))
+                        }
+                    } else {
+                        IconButton(onClick = { showMenu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more)) }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(stringResource(R.string.file_sort)) },
+                                onClick = { showMenu = false; showSortDialogLocal = true }
+                            )
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(stringResource(R.string.multi_select)) },
+                                onClick = { showMenu = false; viewModel.setMultiSelect(true) }
+                            )
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(stringResource(R.string.view_toggle)) },
+                                onClick = { showMenu = false; viewModel.toggleViewMode() }
+                            )
+                        }
+                    }
+                }
+            )
+        )
+    }
 
     // 过滤媒体项
     val filteredMedia = mediaHistory.filter { it.type == selectedMediaType }
@@ -135,7 +198,7 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}) {
                             },
                             onShowDownloadPath = {
                                 val path = viewModel.getDownloadPath(mediaItem)
-                                android.widget.Toast.makeText(context, "下载路径: $path", android.widget.Toast.LENGTH_LONG).show()
+                                android.widget.Toast.makeText(context, context.getString(R.string.download_path_toast, path), android.widget.Toast.LENGTH_LONG).show()
                             },
                             onDelete = {
                                 mediaToDelete = mediaItem
@@ -165,7 +228,7 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}) {
                             },
                             onShowDownloadPath = {
                                 val path = viewModel.getDownloadPath(mediaItem)
-                                android.widget.Toast.makeText(context, "下载路径: $path", android.widget.Toast.LENGTH_LONG).show()
+                                android.widget.Toast.makeText(context, context.getString(R.string.download_path_toast, path), android.widget.Toast.LENGTH_LONG).show()
                             },
                             onDelete = {
                                 mediaToDelete = mediaItem
@@ -185,20 +248,20 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}) {
     // 删除确认对话框
     if (showDeleteDialog && mediaToDelete != null) {
         AlertDialog(
-            title = { Text("删除确认") },
-            text = { Text("确定要删除这个媒体项吗?") },
+            title = { Text(stringResource(R.string.delete_confirm_title)) },
+            text = { Text(stringResource(R.string.delete_confirm_message)) },
             onDismissRequest = { showDeleteDialog = false },
             confirmButton = {
                 TextButton(onClick = {
                     mediaToDelete?.let { viewModel.deleteMedia(it) }
                     showDeleteDialog = false
                 }) {
-                    Text("删除")
+                    Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -210,12 +273,34 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}) {
     Surface(tonalElevation = 3.dp) {
             BottomAppBar(modifier = Modifier.navigationBarsPadding()) {
         TextButton(onClick = { viewModel.shareSelected() }) {
-                    Text("分享")
+                    Text(stringResource(R.string.share))
                 }
                 TextButton(onClick = { viewModel.deleteSelected() }) {
-                    Text("删除", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                 }
             }
         }
+    }
+
+    // 排序对话框（迁移至本屏幕）
+    if (showSortDialogLocal) {
+        AlertDialog(
+            onDismissRequest = { showSortDialogLocal = false },
+            title = { Text(stringResource(org.jayhsu.xsaver.R.string.file_sort)) },
+            text = {
+                Column {
+                    TextButton(onClick = {
+                        viewModel.setSortBy(SortBy.DownloadTime)
+                        showSortDialogLocal = false
+                    }) { Text(stringResource(org.jayhsu.xsaver.R.string.sort_by_download_time)) }
+                    TextButton(onClick = {
+                        viewModel.setSortBy(SortBy.FileSize)
+                        showSortDialogLocal = false
+                    }) { Text(stringResource(org.jayhsu.xsaver.R.string.sort_by_file_size)) }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {}
+        )
     }
 }

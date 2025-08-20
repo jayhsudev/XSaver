@@ -70,10 +70,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.runtime.DisposableEffect
+import org.jayhsu.xsaver.ui.navigation.LocalTopBarController
+import org.jayhsu.xsaver.ui.navigation.TopBarSpec
+import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DownloadScreen(navController: NavHostController, initialSharedLink: String? = null) {
+fun DownloadScreen(navController: NavHostController, initialSharedLink: String? = null, onOpenDrawer: () -> Unit = {}, onOpenLatestX: (() -> Unit)? = null) {
     val viewModel: DownloadViewModel = hiltViewModel()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -94,6 +102,30 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
     var showResultSheet by remember { mutableStateOf(false) }
     val selected = remember { mutableStateOf(setOf<String>()) }
     var postText by remember { mutableStateOf("") }
+
+    // Set TopBar via provider
+    val topBarController = LocalTopBarController.current
+    val topBarOwner = remember { Any() }
+    DisposableEffect(topBarOwner) {
+        topBarController.setFor(topBarOwner,
+            TopBarSpec(
+                title = { Text(text = stringResource(id = R.string.app_name)) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.open_drawer))
+                    }
+                },
+                actions = {
+                    if (onOpenLatestX != null) {
+                        IconButton(onClick = onOpenLatestX) {
+                            Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = stringResource(R.string.open_x_app))
+                        }
+                    }
+                }
+            )
+    )
+    onDispose { topBarController.setFor(topBarOwner, null) }
+    }
 
     // If launched with a shared link, parse it once
     if (!initialSharedLink.isNullOrBlank()) {
@@ -160,14 +192,14 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "点击右下角按钮粘贴X平台链接",
+                        text = stringResource(R.string.paste_link_cta),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = { navController.navigate("history") }) {
-                        Text("查看全部记录")
+                        Text(stringResource(R.string.view_all_history))
                     }
                 }
             } else if (isLoading) {
@@ -184,7 +216,7 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                         contentDescription = null
                     )
                     Text(
-                        text = "解析链接中...",
+                        text = stringResource(R.string.parsing_in_progress),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -199,7 +231,7 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                             mediaItem = mediaItem,
                             onDownloadClick = {
                                 viewModel.downloadMedia(mediaItem)
-                                successMessage = "开始下载: ${mediaItem.title}"
+                                successMessage = context.getString(R.string.start_download, mediaItem.title ?: "")
                                 showSuccessDialog = true
                             },
                             onShareClick = {
@@ -210,20 +242,23 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                             onOpenInXClick = { viewModel.openInX(mediaItem) },
                             onShowDownloadPathClick = {
                                 val path = viewModel.getDownloadPath(mediaItem)
-                                Toast.makeText(context, "下载路径: $path", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, context.getString(R.string.download_path_toast, path), Toast.LENGTH_LONG).show()
                             },
                             onPreview = {
                                 val url = android.net.Uri.encode(mediaItem.url)
                                 val type = mediaItem.type.name
                                 val title = android.net.Uri.encode(mediaItem.title ?: "")
-                                navController.navigate("media?url=${url}&type=${type}&title=${title}")
+                                navController.navigate("media?url=${url}&type=${type}&title=${title}") {
+                                    launchSingleTop = true
+                                    popUpTo(org.jayhsu.xsaver.ui.navigation.Screen.Media.route) { inclusive = true }
+                                }
                             }
                         )
                     }
                     item {
                         Spacer(Modifier.height(16.dp))
                         Button(onClick = { navController.navigate("history") }, modifier = Modifier.fillMaxWidth()) {
-                            Text("查看全部记录")
+                            Text(stringResource(R.string.view_all_history))
                         }
                     }
                 }
@@ -235,11 +270,11 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
     if (showParseDialog) {
         AlertDialog(
             onDismissRequest = { /* block while parsing */ },
-            title = { Text("解析链接中") },
+        title = { Text(stringResource(R.string.parsing_link)) },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     LinearProgressIndicator(progress = { parseProgress / 100f }, modifier = Modifier.fillMaxWidth())
-                    Text(text = "${parseProgress}%", modifier = Modifier.padding(top = 8.dp))
+            Text(text = stringResource(R.string.percent_format, parseProgress), modifier = Modifier.padding(top = 8.dp))
                 }
             },
             confirmButton = {},
@@ -257,13 +292,13 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                 .fillMaxWidth()
                 .padding(16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "识别结果", style = MaterialTheme.typography.titleMedium)
-                    IconButton(onClick = { showResultSheet = false }) { Icon(Icons.Filled.Close, contentDescription = "关闭") }
+                    Text(text = stringResource(R.string.identify_results), style = MaterialTheme.typography.titleMedium)
+                    IconButton(onClick = { showResultSheet = false }) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close)) }
                 }
                 if (postText.isNotBlank()) {
                     Text(text = postText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 8.dp))
                 }
-                Text(text = "媒体（可多选）", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
+                Text(text = stringResource(R.string.media_multi_select), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
                     contentPadding = PaddingValues(bottom = 16.dp)
@@ -283,13 +318,13 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                         val toDownload = mediaItems.filter { selected.value.contains(it.id) }.ifEmpty { mediaItems }
                         viewModel.downloadMediaList(toDownload)
                         showResultSheet = false
-                        successMessage = "已添加${toDownload.size}个下载任务"
+                        successMessage = context.getString(R.string.added_download_tasks, toDownload.size)
                         showSuccessDialog = true
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                    Text("下载所选")
+                    Text(stringResource(R.string.download_selected))
                 }
             }
         }
@@ -319,7 +354,7 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                     trailingIcon = {
                         if (link.isNotEmpty()) {
                             IconButton(onClick = { link = "" }) {
-                                Icon(Icons.Filled.Close, contentDescription = "清除")
+                                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.clear))
                             }
                         }
                     },
@@ -360,12 +395,12 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
     if (showErrorDialog) {
         AlertDialog(
             icon = { Icon(Icons.Filled.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text("错误") },
+        title = { Text(stringResource(R.string.error_title)) },
             text = { Text(errorMessage) },
             onDismissRequest = { showErrorDialog = false },
             confirmButton = {
                 TextButton(onClick = { showErrorDialog = false }) {
-                    Text("确定")
+            Text(stringResource(R.string.ok))
                 }
             }
         )
@@ -375,12 +410,12 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
     if (showSuccessDialog) {
         AlertDialog(
             icon = { Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color.Green) },
-            title = { Text("成功") },
+        title = { Text(stringResource(R.string.success_title)) },
             text = { Text(successMessage) },
             onDismissRequest = { showSuccessDialog = false },
             confirmButton = {
                 TextButton(onClick = { showSuccessDialog = false }) {
-                    Text("确定")
+            Text(stringResource(R.string.ok))
                 }
             }
         )
