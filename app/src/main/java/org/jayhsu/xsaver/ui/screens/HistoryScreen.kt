@@ -55,18 +55,34 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.ChecklistRtl
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.DropdownMenu
+import org.jayhsu.xsaver.ui.viewmodel.SettingsViewModel
+import org.jayhsu.xsaver.ui.viewmodel.HistorySortBy
+import org.jayhsu.xsaver.ui.viewmodel.HistoryViewMode
+import androidx.hilt.navigation.compose.hiltViewModel
+import org.jayhsu.xsaver.ui.components.OptionSelectionDialog
+import org.jayhsu.xsaver.ui.components.OptionItem
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Storage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) {
     val viewModel: HistoryViewModel = hiltViewModel()
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
     val context = LocalContext.current
     val mediaHistory by viewModel.mediaHistory.collectAsState()
     val isMultiSelect by viewModel.isMultiSelect.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()
-    val sortBy by viewModel.sortBy.collectAsState()
+    val sortByPref by settingsViewModel.historySortBy.collectAsState()
+    val viewModePref by settingsViewModel.historyViewMode.collectAsState()
     var selectedMediaType by remember { mutableStateOf<MediaType>(MediaType.VIDEO) } // 默认视频
     var showDeleteDialog by remember { mutableStateOf(false) }
     var mediaToDelete by remember { mutableStateOf<MediaItem?>(null) }
@@ -80,7 +96,7 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
         onDispose { topBarController.setFor(topBarOwner, null) }
     }
     // Update top bar spec on relevant state changes without clearing it mid-frame
-    LaunchedEffect(isMultiSelect, selectedIds.size) {
+    LaunchedEffect(isMultiSelect, selectedIds.size, sortByPref, viewModePref) {
         topBarController.setFor(topBarOwner,
             TopBarSpec(
                 title = {
@@ -108,15 +124,21 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             androidx.compose.material3.DropdownMenuItem(
                                 text = { Text(stringResource(R.string.file_sort)) },
-                                onClick = { showMenu = false; showSortDialogLocal = true }
+                                onClick = { showMenu = false; showSortDialogLocal = true },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = null) }
                             )
                             androidx.compose.material3.DropdownMenuItem(
                                 text = { Text(stringResource(R.string.multi_select)) },
-                                onClick = { showMenu = false; viewModel.setMultiSelect(true) }
+                                onClick = { showMenu = false; viewModel.setMultiSelect(true) },
+                                leadingIcon = { Icon(Icons.Filled.ChecklistRtl, contentDescription = null) }
                             )
                             androidx.compose.material3.DropdownMenuItem(
                                 text = { Text(stringResource(R.string.view_toggle)) },
-                                onClick = { showMenu = false; viewModel.toggleViewMode() }
+                                onClick = { showMenu = false; settingsViewModel.toggleHistoryViewMode() },
+                                leadingIcon = {
+                                    val isList = viewModePref == HistoryViewMode.List
+                                    Icon(if (isList) Icons.AutoMirrored.Filled.List else Icons.Filled.GridView, contentDescription = null)
+                                }
                             )
                         }
                     }
@@ -162,9 +184,9 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
         }
 
     // 排序
-    val sortedMedia = when (sortBy) {
-        SortBy.DownloadTime -> filteredMedia.sortedByDescending { it.downloadedAt }
-        SortBy.FileSize -> filteredMedia.sortedByDescending { it.size ?: -1f }
+    val sortedMedia = when (sortByPref) {
+        HistorySortBy.DownloadTime -> filteredMedia.sortedByDescending { it.downloadedAt }
+        HistorySortBy.FileSize -> filteredMedia.sortedByDescending { it.size ?: -1f }
     }
 
     // 媒体列表
@@ -182,7 +204,7 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
                 )
             }
         } else {
-            if (viewModel.viewMode.collectAsState().value == HistoryViewModel.ViewMode.List) {
+            if (viewModePref == HistoryViewMode.List) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp)
@@ -282,25 +304,17 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
         }
     }
 
-    // 排序对话框（迁移至本屏幕）
+    // 排序对话框
     if (showSortDialogLocal) {
-        AlertDialog(
-            onDismissRequest = { showSortDialogLocal = false },
-            title = { Text(stringResource(org.jayhsu.xsaver.R.string.file_sort)) },
-            text = {
-                Column {
-                    TextButton(onClick = {
-                        viewModel.setSortBy(SortBy.DownloadTime)
-                        showSortDialogLocal = false
-                    }) { Text(stringResource(org.jayhsu.xsaver.R.string.sort_by_download_time)) }
-                    TextButton(onClick = {
-                        viewModel.setSortBy(SortBy.FileSize)
-                        showSortDialogLocal = false
-                    }) { Text(stringResource(org.jayhsu.xsaver.R.string.sort_by_file_size)) }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {}
+        OptionSelectionDialog(
+            title = stringResource(R.string.file_sort),
+            options = listOf(
+                OptionItem(HistorySortBy.DownloadTime, stringResource(R.string.sort_by_download_time), Icons.Filled.AccessTime),
+                OptionItem(HistorySortBy.FileSize, stringResource(R.string.sort_by_file_size), Icons.Filled.Storage)
+            ),
+            selected = sortByPref,
+            onSelect = { settingsViewModel.setHistorySortBy(it) },
+            onDismiss = { showSortDialogLocal = false }
         )
     }
 }

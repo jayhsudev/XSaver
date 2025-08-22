@@ -47,6 +47,13 @@ import org.jayhsu.xsaver.ui.viewmodel.ThemeMode
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
 import org.jayhsu.xsaver.ui.viewmodel.HistoryViewModel.SortBy
+import org.jayhsu.xsaver.ui.components.OptionSelectionDialog
+import org.jayhsu.xsaver.ui.components.OptionItem
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.SettingsBrightness
+import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.Public
 import java.io.File
 import androidx.core.net.toUri
 
@@ -61,6 +68,7 @@ fun AppNavigation(initialSharedLink: String? = null) {
     val context = LocalContext.current
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
 
     // Reuse HistoryViewModel to get the latest downloaded item
     val historyViewModel: HistoryViewModel = hiltViewModel()
@@ -132,35 +140,45 @@ fun AppNavigation(initialSharedLink: String? = null) {
                     NavigationDrawerItem(
                         label = { Text(stringResource(R.string.about)) },
                         selected = false,
-                        onClick = { showLanguageDialog = true },
+                        onClick = { showAboutDialog = true },
                         icon = { Icon(Icons.Filled.Info, contentDescription = null) }
                     )
                 }
                 // Theme dialog
                 if (showThemeDialog) {
-            AlertDialog(
-                        onDismissRequest = { showThemeDialog = false },
-            title = { Text(stringResource(R.string.theme)) },
-                        text = {
-                            Column {
-                TextButton(onClick = { settingsViewModel.setThemeMode(ThemeMode.LIGHT); showThemeDialog = false }) { Text(stringResource(R.string.theme_light)) }
-                TextButton(onClick = { settingsViewModel.setThemeMode(ThemeMode.DARK); showThemeDialog = false }) { Text(stringResource(R.string.theme_dark)) }
-                TextButton(onClick = { settingsViewModel.setThemeMode(ThemeMode.SYSTEM); showThemeDialog = false }) { Text(stringResource(R.string.theme_system)) }
-                            }
-                        },
-                        confirmButton = {},
-                        dismissButton = {}
+                    OptionSelectionDialog(
+                        title = stringResource(R.string.theme),
+                        options = listOf(
+                            OptionItem(ThemeMode.LIGHT, stringResource(R.string.theme_light), Icons.Filled.WbSunny),
+                            OptionItem(ThemeMode.DARK, stringResource(R.string.theme_dark), Icons.Filled.DarkMode),
+                            OptionItem(ThemeMode.SYSTEM, stringResource(R.string.theme_system), Icons.Filled.SettingsBrightness)
+                        ),
+                        selected = themeMode,
+                        onSelect = { settingsViewModel.setThemeMode(it) },
+                        onDismiss = { showThemeDialog = false }
                     )
                 }
-                // Language dialog
                 if (showLanguageDialog) {
+                    OptionSelectionDialog(
+                        title = stringResource(R.string.language),
+                        options = listOf(
+                            OptionItem("zh", stringResource(R.string.language_zh), Icons.Filled.Translate),
+                            OptionItem("en", stringResource(R.string.language_en), Icons.Filled.Public)
+                        ),
+                        selected = language,
+                        onSelect = { settingsViewModel.setLanguage(it) },
+                        onDismiss = { showLanguageDialog = false }
+                    )
+                }
+                // About dialog
+                if (showAboutDialog) {
                     AlertDialog(
-                        onDismissRequest = { showLanguageDialog = false },
-            title = { Text(stringResource(R.string.language)) },
+                        onDismissRequest = { showAboutDialog = false },
+                        title = { Text(stringResource(R.string.about)) },
                         text = {
                             Column {
-                TextButton(onClick = { settingsViewModel.setLanguage("zh"); showLanguageDialog = false }) { Text(stringResource(R.string.language_zh)) }
-                TextButton(onClick = { settingsViewModel.setLanguage("en"); showLanguageDialog = false }) { Text(stringResource(R.string.language_en)) }
+                                Text(stringResource(R.string.app_name))
+                                Text(stringResource(R.string.app_name))
                             }
                         },
                         confirmButton = {},

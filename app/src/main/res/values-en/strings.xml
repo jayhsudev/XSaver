@@ -41,7 +41,7 @@
     <string name="more">More</string>
     <string name="file_sort">Sort files</string>
     <string name="multi_select">Multi-select</string>
-    <string name="view_toggle">Toggle view (List/Grid)</string>
+    <string name="view_toggle">Toggle view</string>
     <string name="theme">Theme</string>
     <string name="language">Language</string>
     <string name="clear_cache">Clear cache</string>

@@ -26,6 +26,10 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
 
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
 
+// History screen related enums (persisted settings)
+enum class HistorySortBy { DownloadTime, FileSize }
+enum class HistoryViewMode { List, Grid }
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     application: Application
@@ -34,12 +38,20 @@ class SettingsViewModel @Inject constructor(
 
     private val THEME_KEY = intPreferencesKey("theme_mode")
     private val LOCALE_KEY = stringPreferencesKey("locale")
+    private val HISTORY_SORT_KEY = intPreferencesKey("history_sort_by") // 0 time, 1 size
+    private val HISTORY_VIEW_MODE_KEY = intPreferencesKey("history_view_mode") // 0 list, 1 grid
 
     private val _themeMode = MutableStateFlow(ThemeMode.SYSTEM)
     val themeMode: StateFlow<ThemeMode> = _themeMode
 
     private val _language = MutableStateFlow("zh") // zh or en
     val language: StateFlow<String> = _language
+
+    private val _historySortBy = MutableStateFlow(HistorySortBy.DownloadTime)
+    val historySortBy: StateFlow<HistorySortBy> = _historySortBy
+
+    private val _historyViewMode = MutableStateFlow(HistoryViewMode.List)
+    val historyViewMode: StateFlow<HistoryViewMode> = _historyViewMode
 
     init {
         viewModelScope.launch {
@@ -61,6 +73,22 @@ class SettingsViewModel @Inject constructor(
                     applyLocale(lang)
                 }
         }
+        viewModelScope.launch {
+            appContext.dataStore.data.map { prefs ->
+                when (prefs[HISTORY_SORT_KEY] ?: 0) {
+                    0 -> HistorySortBy.DownloadTime
+                    else -> HistorySortBy.FileSize
+                }
+            }.collect { _historySortBy.value = it }
+        }
+        viewModelScope.launch {
+            appContext.dataStore.data.map { prefs ->
+                when (prefs[HISTORY_VIEW_MODE_KEY] ?: 0) {
+                    0 -> HistoryViewMode.List
+                    else -> HistoryViewMode.Grid
+                }
+            }.collect { _historyViewMode.value = it }
+        }
     }
 
     fun setThemeMode(mode: ThemeMode) {
@@ -75,6 +103,33 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             appContext.dataStore.edit { prefs ->
                 prefs[LOCALE_KEY] = lang
+            }
+        }
+    }
+
+    fun setHistorySortBy(sort: HistorySortBy) {
+        viewModelScope.launch {
+            appContext.dataStore.edit { prefs ->
+                prefs[HISTORY_SORT_KEY] = when (sort) {
+                    HistorySortBy.DownloadTime -> 0
+                    HistorySortBy.FileSize -> 1
+                }
+            }
+        }
+    }
+
+    fun toggleHistoryViewMode() {
+        val newMode = if (_historyViewMode.value == HistoryViewMode.List) HistoryViewMode.Grid else HistoryViewMode.List
+        setHistoryViewMode(newMode)
+    }
+
+    fun setHistoryViewMode(mode: HistoryViewMode) {
+        viewModelScope.launch {
+            appContext.dataStore.edit { prefs ->
+                prefs[HISTORY_VIEW_MODE_KEY] = when (mode) {
+                    HistoryViewMode.List -> 0
+                    HistoryViewMode.Grid -> 1
+                }
             }
         }
     }

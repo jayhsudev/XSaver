@@ -41,7 +41,7 @@
     <string name="more">更多</string>
     <string name="file_sort">文件排序</string>
     <string name="multi_select">多选</string>
-    <string name="view_toggle">视图切换（列表/网格）</string>
+    <string name="view_toggle">视图切换</string>
     <string name="theme">主题</string>
     <string name="language">语言</string>
     <string name="clear_cache">清除缓存</string>
