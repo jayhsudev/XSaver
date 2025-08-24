@@ -45,7 +45,6 @@ import org.jayhsu.xsaver.data.model.MediaType
 import org.jayhsu.xsaver.ui.components.MediaCard
 import org.jayhsu.xsaver.ui.components.MediaLane
 import org.jayhsu.xsaver.ui.viewmodel.HistoryViewModel
-import org.jayhsu.xsaver.ui.viewmodel.HistoryViewModel.SortBy
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -59,14 +58,11 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ChecklistRtl
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.DropdownMenu
 import org.jayhsu.xsaver.ui.viewmodel.SettingsViewModel
 import org.jayhsu.xsaver.ui.viewmodel.HistorySortBy
 import org.jayhsu.xsaver.ui.viewmodel.HistoryViewMode
-import androidx.hilt.navigation.compose.hiltViewModel
 import org.jayhsu.xsaver.ui.components.OptionSelectionDialog
 import org.jayhsu.xsaver.ui.components.OptionItem
 import androidx.compose.material.icons.filled.AccessTime
@@ -95,7 +91,6 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
     DisposableEffect(topBarOwner) {
         onDispose { topBarController.setFor(topBarOwner, null) }
     }
-    // Update top bar spec on relevant state changes without clearing it mid-frame
     LaunchedEffect(isMultiSelect, selectedIds.size, sortByPref, viewModePref) {
         topBarController.setFor(topBarOwner,
             TopBarSpec(
@@ -150,11 +145,8 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
     // 过滤媒体项
     val filteredMedia = mediaHistory.filter { it.type == selectedMediaType }
 
-    // Top bar is provided by Scaffold (AppNavigation); local menu/dialog removed
-
     Column(modifier = Modifier.fillMaxSize()) {
     // 顶部栏由 AppNavigation 提供
-        // 分类标签
     SingleChoiceSegmentedButtonRow(
             modifier = Modifier
                 .fillMaxWidth()
