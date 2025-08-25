@@ -1,62 +1,59 @@
 package org.jayhsu.xsaver.di
 
-import org.jayhsu.xsaver.BuildConfig
-import org.jayhsu.xsaver.network.ApiService
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import javax.inject.Singleton
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.jayhsu.xsaver.BuildConfig
+import org.jayhsu.xsaver.network.ApiService
 import retrofit2.Retrofit
-import javax.inject.Singleton
-import kotlinx.serialization.json.Json
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import okhttp3.MediaType.Companion.toMediaType
 
+/**
+ * 网络相关依赖注入模块：提供 OkHttp、Retrofit 与 ApiService。
+ * 解决之前 Hilt 构建失败的 MissingBinding(ApiService) 问题。
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    @Provides
-    @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-        val loggingInterceptor = HttpLoggingInterceptor()
-        // 在发布版本中应该使用NONE级别
-        loggingInterceptor.level = if (BuildConfig.DEBUG) {
-            HttpLoggingInterceptor.Level.BODY
-        } else {
-            HttpLoggingInterceptor.Level.NONE
-        }
+	@Provides
+	@Singleton
+	fun provideOkHttpClient(): OkHttpClient {
+		val builder = OkHttpClient.Builder()
+		// 在 Debug 下添加日志拦截器
+		if (BuildConfig.DEBUG) {
+			val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
+			builder.addInterceptor(logging)
+		}
+		return builder.build()
+	}
 
-        return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .retryOnConnectionFailure(true) // 允许连接失败重试
-            .build()
-    }
+	@Provides
+	@Singleton
+	fun provideJson(): Json = Json {
+		ignoreUnknownKeys = true
+		isLenient = true
+		encodeDefaults = false
+	}
 
-    @Provides
-    @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        val json = Json {
-            ignoreUnknownKeys = true
-            isLenient = true
-            explicitNulls = false
-        }
-        val contentType = "application/json".toMediaType()
-        return Retrofit.Builder()
-            .baseUrl(BuildConfig.API_BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(json.asConverterFactory(contentType))
-            .build()
-    }
+	@Provides
+	@Singleton
+	fun provideRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit {
+		val contentType = "application/json".toMediaType()
+		return Retrofit.Builder()
+			.baseUrl(BuildConfig.API_BASE_URL)
+			.client(okHttpClient)
+			.addConverterFactory(json.asConverterFactory(contentType))
+			.build()
+	}
 
-    @Provides
-    @Singleton
-    fun provideApiService(retrofit: Retrofit): ApiService {
-        return retrofit.create(ApiService::class.java)
-    }
+	@Provides
+	@Singleton
+	fun provideApiService(retrofit: Retrofit): ApiService = retrofit.create(ApiService::class.java)
 }
