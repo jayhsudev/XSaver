@@ -1,10 +1,15 @@
 package org.jayhsu.xsaver.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +31,8 @@ fun TweetHeader(
     text: String?,
     modifier: Modifier = Modifier,
     avatarSize: Int = 40,
+    maxCollapsedLines: Int = 3,
+    enableCollapse: Boolean = true,
 ) {
     Row(
         modifier = modifier,
@@ -52,10 +59,37 @@ fun TweetHeader(
             }
             if (!text.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+
+                var expanded by remember(text) { mutableStateOf(false) }
+                var canExpand by remember(text) { mutableStateOf(false) }
+
+                Column(modifier = Modifier) {
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = if (expanded || !enableCollapse) Int.MAX_VALUE else maxCollapsedLines,
+                        overflow = TextOverflow.Ellipsis,
+                        onTextLayout = { layoutResult ->
+                            if (enableCollapse && !expanded) {
+                                // If original line count exceeds collapsed limit, allow expansion
+                                val more = layoutResult.lineCount > maxCollapsedLines
+                                if (more != canExpand) canExpand = more
+                            }
+                        }
+                    )
+                    if (enableCollapse && canExpand) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (expanded) "收起" else "更多",
+                            style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.primary),
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.extraSmall)
+                                .padding(end = 8.dp)
+                                .clickable { expanded = !expanded },
+                            maxLines = 1
+                        )
+                    }
+                }
             }
         }
     }
@@ -76,11 +110,38 @@ private fun PreviewTweetHeaderLight() {
 @Preview(showBackground = true, name = "TweetHeader Long Text")
 @Composable
 private fun PreviewTweetHeaderLongText() {
-    Surface { 
+    Surface {
         TweetHeader(
             avatarUrl = null,
             accountName = "VeryLongUserName_ABCDEFG_HIJKLMNOP_123456789",
             text = "这是一段较长的正文，用于测试自动换行与布局表现。Second line example."
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "TweetHeader Collapsed Body")
+@Composable
+private fun PreviewTweetHeaderCollapsed() {
+    Surface {
+        TweetHeader(
+            avatarUrl = "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png",
+            accountName = "SampleUser",
+            text = (1..12).joinToString(" ") { "段落$it" } + " 结尾",
+            maxCollapsedLines = 3
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "TweetHeader Expanded Body")
+@Composable
+private fun PreviewTweetHeaderExpanded() {
+    Surface {
+        // Force expanded preview by disabling collapse for demonstration
+        TweetHeader(
+            avatarUrl = null,
+            accountName = "ExpandUser",
+            text = List(30) { "文本${it}" }.joinToString(" "),
+            enableCollapse = false
         )
     }
 }

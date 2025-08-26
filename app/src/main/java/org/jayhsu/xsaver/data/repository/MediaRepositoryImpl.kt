@@ -8,7 +8,10 @@ import org.jayhsu.xsaver.data.dao.MediaDao
 import org.jayhsu.xsaver.data.model.MediaItem
 import org.jayhsu.xsaver.data.model.MediaType
 import org.jayhsu.xsaver.network.ApiService
+import org.jayhsu.xsaver.data.dao.TweetDao
+import org.jayhsu.xsaver.data.model.TweetEntity
 import org.jayhsu.xsaver.network.LinkParser
+import org.jayhsu.xsaver.core.error.ParseError
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import java.io.File
@@ -22,29 +25,77 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 @Singleton
 class MediaRepositoryImpl @Inject constructor(
     private val mediaDao: MediaDao,
+    private val tweetDao: TweetDao,
     private val apiService: ApiService, // 留着可能的其它下载用途
     private val linkParser: LinkParser,
+    private val okHttpClient: OkHttpClient,
     @param:ApplicationContext private val context: Context
 ) : MediaRepository {
+    // ---- Parse LRU Cache ----
+    private data class ParseCacheEntry(val createdAt: Long, val mediaItems: List<MediaItem>)
+    private val cacheMutex = Mutex()
+    private val parseCacheMax = 32
+    private val parseCacheTtlMs = 5 * 60 * 1000L // 5分钟
+    private val parseCache = object : LinkedHashMap<String, ParseCacheEntry>(parseCacheMax, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ParseCacheEntry>?): Boolean = size > parseCacheMax
+    }
+
+    // ---- File existence cache ----
+    private val fileCacheMutex = Mutex()
+    @Volatile private var fileNameCache: MutableSet<String>? = null
+
+    private suspend fun ensureFileCache() {
+        if (fileNameCache != null) return
+        fileCacheMutex.withLock {
+            if (fileNameCache == null) {
+                val dir = downloadDir()
+                val names = if (dir.exists()) dir.list()?.toMutableSet() ?: mutableSetOf() else mutableSetOf()
+                fileNameCache = names
+            }
+        }
+    }
+
+    private fun normalizeLink(link: String): String = link.trim().substringBefore('?')
+
     override suspend fun parseLink(link: String): List<MediaItem> {
-    val html = linkParser.parseTweetLink(link)
-        val parsed = linkParser.parseTweetHtml(html) ?: return emptyList()
+        val key = normalizeLink(link)
+        // 读缓存
+        cacheMutex.withLock {
+            parseCache[key]?.let { entry ->
+                if (System.currentTimeMillis() - entry.createdAt < parseCacheTtlMs) return entry.mediaItems
+                else parseCache.remove(key)
+            }
+        }
+        val result = linkParser.parseTweetLink(key)
+        val parsed = result.tweet ?: return emptyList()
+        // upsert tweet
+        tweetDao.upsert(
+            TweetEntity(
+                tweetUrl = key,
+                avatarUrl = parsed.avatarUrl,
+                accountName = parsed.accountName,
+                text = parsed.text
+            )
+        )
         val items = mutableListOf<MediaItem>()
-        // Images
         parsed.imageList.forEach { imgUrl ->
             items += MediaItem(
                 url = imgUrl,
                 title = parsed.text?.take(60),
                 thumbnailUrl = imgUrl,
                 type = MediaType.IMAGE,
-                sourceUrl = link
+                sourceUrl = key,
+                tweetId = key,
+                avatarUrl = parsed.avatarUrl,
+                accountName = parsed.accountName
             )
         }
-        // Videos (use first source variant per video)
         parsed.videoList.forEach { video ->
             val first = video.sources.firstOrNull()
             val mediaUrl = first?.url ?: return@forEach
@@ -53,9 +104,13 @@ class MediaRepositoryImpl @Inject constructor(
                 title = parsed.text?.take(60),
                 thumbnailUrl = video.poster,
                 type = MediaType.VIDEO,
-                sourceUrl = link
+                sourceUrl = key,
+                tweetId = key,
+                avatarUrl = parsed.avatarUrl,
+                accountName = parsed.accountName
             )
         }
+        cacheMutex.withLock { parseCache[key] = ParseCacheEntry(System.currentTimeMillis(), items) }
         return items
     }
 
@@ -90,9 +145,8 @@ class MediaRepositoryImpl @Inject constructor(
                 val dir = downloadDir()
                 if (!dir.exists()) dir.mkdirs()
                 val target = File(dir, sanitizeFileName(fileName))
-                val client = OkHttpClient()
                 val request = Request.Builder().url(url).build()
-                client.newCall(request).execute().use { resp ->
+                okHttpClient.newCall(request).execute().use { resp ->
                     if (!resp.isSuccessful) return@withContext false
                     val body = resp.body
                     FileOutputStream(target).use { out ->
@@ -107,8 +161,13 @@ class MediaRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveMediaItem(mediaItem: MediaItem) {
-    mediaDao.insert(mediaItem)
+        mediaDao.insert(mediaItem)
+        ensureFileCache()
+        val fileName = sanitizeFileName(extractNameFromUrl(mediaItem.url))
+        fileNameCache?.add(fileName)
     }
+
+    override suspend fun getTweetCached(url: String) = tweetDao.getTweet(url)
 
     override fun getAllMediaItems(): Flow<List<MediaItem>> {
     return mediaDao.getAllMediaItems()
@@ -127,7 +186,11 @@ class MediaRepositoryImpl @Inject constructor(
     }
 
     override fun isFileExist(mediaItem: MediaItem): Boolean {
-        return buildLocalFile(mediaItem).exists()
+        val cache = fileNameCache
+        return if (cache != null) {
+            val fileName = sanitizeFileName(extractNameFromUrl(mediaItem.url))
+            cache.contains(fileName)
+        } else buildLocalFile(mediaItem).exists()
     }
 
     // ---- Helpers ----

@@ -24,4 +24,7 @@ interface MediaDao {
 
     @Query("DELETE FROM media_items")
     suspend fun deleteAll()
+
+    @Query("UPDATE media_items SET avatarUrl = :avatarUrl, accountName = :accountName WHERE id = :id")
+    suspend fun updateMeta(id: String, avatarUrl: String?, accountName: String?)
 }

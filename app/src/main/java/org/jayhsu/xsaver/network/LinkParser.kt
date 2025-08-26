@@ -4,12 +4,12 @@ import android.content.Context
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jayhsu.xsaver.network.model.ParsedTweet
-import javax.inject.Named
 import javax.inject.Inject
 import javax.inject.Singleton
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jayhsu.xsaver.core.error.ParseError
 
 /**
  * Parse X (Twitter) tweet HTML and extract avatar, account name, text, videos, images.
@@ -19,29 +19,38 @@ import kotlinx.coroutines.withContext
 class LinkParser @Inject constructor(
 	@param:ApplicationContext private val context: Context
 ) {
+	val timeoutMs: Long = 10_000L
+	val waitSelector: String = "article[data-testid='tweet']"
+	val pollIntervalMs: Long = 250L
 
-	// 获取贴文 HTML（IO 线程），避免 runBlocking 阻塞主线程
-	suspend fun parseTweetLink(link: String): String? = runCatching {
-		withContext(Dispatchers.IO) { WebviewFetcher.fetchHtml(context, link) }
-	}.getOrNull()
+	data class ParseTweetResult(val tweet: ParsedTweet?, val error: ParseError?)
 
-	fun parseTweetHtml(html: String?): ParsedTweet? {
-		val nonNullHtml = html ?: return null
-		val doc: Document = Jsoup.parse(nonNullHtml)
-		val article = doc.selectFirst("article[data-testid=tweet]") ?: return null
+	// 获取贴文 HTML 并分类错误
+	suspend fun parseTweetLink(link: String): ParseTweetResult = try {
+		val parsed = withContext(Dispatchers.IO) {
+			val html = WebviewFetcher.fetchHtml(context, url = link, timeoutMs, waitSelector, pollIntervalMs)
+				?: return@withContext ParseTweetResult(null, ParseError.NetworkTimeout)
+			parseTweetHtml(html)
+		}
+		parsed
+	} catch (e: Exception) {
+		ParseTweetResult(null, ParseError.Unknown(e.message))
+	}
+
+	private fun parseTweetHtml(html: String): ParseTweetResult {
+		val doc: Document = Jsoup.parse(html)
+		val article = doc.selectFirst("article[data-testid=tweet]")
+			?: return ParseTweetResult(null, ParseError.StructureChanged)
 
 		val avatarUrl = article.selectFirst("div[data-testid=Tweet-User-Avatar] img")?.attr("src")
-
 		val accountName = article.selectFirst("div[data-testid=User-Name]")
 			?.selectFirst("span span")
 			?.text()
-
 		val textContent = article.selectFirst("div[data-testid=tweetText]")
 			?.select("span")
 			?.joinToString("") { it.text() }
 			?.ifBlank { null }
 
-		// Videos: locate containers inside tweetPhoto blocks
 		val videoList = mutableListOf<ParsedTweet.Video>()
 		article.select("div[data-testid=tweetPhoto]").forEach { photoBlock ->
 			photoBlock.select("div[data-testid=videoComponent]").forEach { videoComp ->
@@ -49,7 +58,7 @@ class LinkParser @Inject constructor(
 				val poster = videoTag?.attr("poster")
 				val sources = videoComp.select("source[type=video/mp4]").mapNotNull { srcEl ->
 					val src = srcEl.attr("src")
-					if (src.isNullOrBlank()) null else ParsedTweet.Video.Source(src, srcEl.attr("type"))
+					if (src.isBlank()) null else ParsedTweet.Video.Source(src, srcEl.attr("type"))
 				}
 				if (poster != null || sources.isNotEmpty()) {
 					videoList += ParsedTweet.Video(poster = poster, sources = sources)
@@ -57,17 +66,20 @@ class LinkParser @Inject constructor(
 			}
 		}
 
-		// Images (exclude video posters)
 		val imageList = article.select("div[data-testid=tweetPhoto] img")
 			.mapNotNull { img -> img.attr("src").takeIf { it.isNotBlank() } }
 			.distinct()
 
-		return ParsedTweet(
+		val tweet = ParsedTweet(
 			avatarUrl = avatarUrl,
 			accountName = accountName,
 			text = textContent,
 			videoList = videoList,
 			imageList = imageList
 		)
+		if (videoList.isEmpty() && imageList.isEmpty()) {
+			return ParseTweetResult(tweet, ParseError.Empty)
+		}
+		return ParseTweetResult(tweet, null)
 	}
 }

@@ -1,16 +1,7 @@
 package org.jayhsu.xsaver.ui.screens
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +15,6 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
@@ -34,7 +24,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -43,8 +36,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -58,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.jayhsu.xsaver.R
 import org.jayhsu.xsaver.ui.components.MediaResultItem
+import org.jayhsu.xsaver.ui.components.TweetHeader
 import org.jayhsu.xsaver.ui.viewmodel.DownloadViewModel
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -78,6 +72,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import org.jayhsu.xsaver.data.model.DownloadStatus
+import org.jayhsu.xsaver.core.error.toMessage
+import org.jayhsu.xsaver.ui.designsystem.Dimens
+import org.jayhsu.xsaver.ui.screens.download.InlineErrorBanner
+import org.jayhsu.xsaver.ui.screens.download.EmptyState
+import org.jayhsu.xsaver.ui.screens.download.DownloadTasksPanel
+import org.jayhsu.xsaver.ui.viewmodel.DownloadUiEvent
+import kotlinx.coroutines.flow.collectLatest
+
+// Inline sealed removed; now using standalone DownloadUiEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,21 +91,24 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
     val sheetState = rememberModalBottomSheetState()
+    val uiState by viewModel.uiState.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
     var link by remember { mutableStateOf("") }
-    var showErrorDialog by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val inlineError = uiState.error
     var showSuccessDialog by remember { mutableStateOf(false) }
     var successMessage by remember { mutableStateOf("") }
 
-    val mediaItems by viewModel.mediaItems.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val parseProgress by viewModel.parseProgress.collectAsState()
-    var showParseDialog by remember { mutableStateOf(false) }
+    val mediaItems = uiState.mediaItems
+    val isLoading = uiState.parsing
+    val parseProgress = uiState.parseProgress
+    val parseError = uiState.parseError
+    val downloadError = uiState.downloadError
     var showResultSheet by remember { mutableStateOf(false) }
     val selected = remember { mutableStateOf(setOf<String>()) }
     var postText by remember { mutableStateOf("") }
+    val parsedTweet = uiState.parsedTweet
+    val downloadTasks by viewModel.downloadTasks.collectAsState()
 
     // Set TopBar via provider
     val topBarController = LocalTopBarController.current
@@ -137,25 +144,22 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
         }
     }
 
-    // 处理链接解析结果
-    error?.let {
-        errorMessage = it
-        showErrorDialog = true
-        viewModel.clearError()
-    }
-
-    // When parsing starts/finishes, control dialog and sheet
-    if (isLoading && !showParseDialog) {
-        showParseDialog = true
-        viewModel.resetParseProgress()
-    }
-    if (!isLoading && showParseDialog) {
-        showParseDialog = false
-        // Open results sheet if we have items
-        if (mediaItems.isNotEmpty()) {
-            showResultSheet = true
+    // 处理解析和下载错误（分别展示）
+    LaunchedEffect(Unit) {
+        viewModel.events.collectLatest { ev ->
+            when (ev) {
+                is DownloadUiEvent.ShowSnackbar -> snackbarHostState.showSnackbar(ev.message)
+                is DownloadUiEvent.ShowToast -> Toast.makeText(context, ev.message, Toast.LENGTH_SHORT).show()
+                is DownloadUiEvent.ShowSuccess -> {
+                    successMessage = ev.message
+                    showSuccessDialog = true
+                }
+                is DownloadUiEvent.Navigate -> navController.navigate(ev.route)
+            }
         }
     }
+
+    // When parsing finishes, open results sheet if items
 
     Scaffold(
         floatingActionButton = {
@@ -168,40 +172,16 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                 Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.paste_link_hint))
             }
         },
-        floatingActionButtonPosition = FabPosition.End
+    floatingActionButtonPosition = FabPosition.End,
+    snackbarHost = { SnackbarHost(snackbarHostState) }
     ) {
         Box(modifier = Modifier
             .fillMaxSize()
             .padding(it)) {
 
+            inlineError?.let { msg -> InlineErrorBanner(message = msg) { /* no-op, driven by state */ } }
             if (mediaItems.isEmpty() && !isLoading) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        Icons.Filled.Link,
-                        modifier = Modifier.padding(16.dp),
-                        contentDescription = null
-                    )
-                    Text(
-                        text = stringResource(R.string.paste_link_hint),
-                        style = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = stringResource(R.string.paste_link_cta),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Button(onClick = { navController.navigate("history") }) {
-                        Text(stringResource(R.string.view_all_history))
-                    }
-                }
+                EmptyState(onHistory = { navController.navigate("history") })
             } else if (isLoading) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
@@ -224,9 +204,9 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp)
+                    contentPadding = PaddingValues(Dimens.Space16)
                 ) {
-                    items(mediaItems) { mediaItem ->
+                    items(mediaItems, key = { it.id }) { mediaItem ->
                         MediaResultItem(
                             mediaItem = mediaItem,
                             onDownloadClick = {
@@ -256,31 +236,20 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                         )
                     }
                     item {
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(Dimens.Space16))
                         Button(onClick = { navController.navigate("history") }, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(R.string.view_all_history))
                         }
                     }
                 }
             }
+
+            // 下载任务进度显示
+            DownloadTasksPanel(tasks = downloadTasks, onPause = viewModel::pauseTask, onResume = viewModel::resumeTask, onCancel = viewModel::cancelTask)
         }
     }
 
-    // 解析进度对话框
-    if (showParseDialog) {
-        AlertDialog(
-            onDismissRequest = { /* block while parsing */ },
-        title = { Text(stringResource(R.string.parsing_link)) },
-            text = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    LinearProgressIndicator(progress = { parseProgress / 100f }, modifier = Modifier.fillMaxWidth())
-            Text(text = stringResource(R.string.percent_format, parseProgress), modifier = Modifier.padding(top = 8.dp))
-                }
-            },
-            confirmButton = {},
-            dismissButton = {}
-        )
-    }
+    // Removed obsolete parse dialog code
 
     // 结果全屏BottomSheet（Drawer样式）
     if (showResultSheet) {
@@ -290,33 +259,41 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
         ) {
             Column(modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)) {
+                .padding(Dimens.Space16)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(text = stringResource(R.string.identify_results), style = MaterialTheme.typography.titleMedium)
                     IconButton(onClick = { showResultSheet = false }) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close)) }
                 }
                 if (postText.isNotBlank()) {
-                    Text(text = postText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 8.dp))
+                    Text(text = postText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = Dimens.Space8))
                 }
-                Text(text = stringResource(R.string.media_multi_select), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
+                parsedTweet?.let { pt ->
+                    TweetHeader(avatarUrl = pt.avatarUrl, accountName = pt.accountName, text = pt.text, modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.Space8))
+                }
+                Text(text = stringResource(R.string.media_multi_select), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = Dimens.Space8, bottom = Dimens.Space8))
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     itemsIndexed(mediaItems) { _, item ->
                         val checked = selected.value.contains(item.id)
+                        val downloaded = viewModel.isDownloaded(item)
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = checked, onCheckedChange = { isChecked ->
-                                selected.value = if (isChecked) selected.value + item.id else selected.value - item.id
-                            })
-                            Text(text = item.title ?: item.url, modifier = Modifier.padding(start = 8.dp))
+                            if (downloaded) {
+                                Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color.Green)
+                            } else {
+                                Checkbox(checked = checked, onCheckedChange = { isChecked ->
+                                    selected.value = if (isChecked) selected.value + item.id else selected.value - item.id
+                                })
+                            }
+                            Text(text = (item.title ?: item.url) + if (downloaded) " (downloaded)" else "", modifier = Modifier.padding(start = Dimens.Space8))
                         }
                     }
                 }
                 Button(
                     onClick = {
-                        val toDownload = mediaItems.filter { selected.value.contains(it.id) }.ifEmpty { mediaItems }
-                        viewModel.downloadMediaList(toDownload)
+                        val toDownload = mediaItems.filter { selected.value.contains(it.id) || viewModel.isDownloaded(it).not() }.ifEmpty { mediaItems.filter { !viewModel.isDownloaded(it) } }
+                        toDownload.forEach { viewModel.enqueueDownload(it) }
                         showResultSheet = false
                         successMessage = context.getString(R.string.added_download_tasks, toDownload.size)
                         showSuccessDialog = true
@@ -392,19 +369,7 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
     }
 
     // 错误对话框
-    if (showErrorDialog) {
-        AlertDialog(
-            icon = { Icon(Icons.Filled.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-        title = { Text(stringResource(R.string.error_title)) },
-            text = { Text(errorMessage) },
-            onDismissRequest = { showErrorDialog = false },
-            confirmButton = {
-                TextButton(onClick = { showErrorDialog = false }) {
-            Text(stringResource(R.string.ok))
-                }
-            }
-        )
-    }
+    // 原对话框移除，改为 Snackbar + Inline
 
     // 成功对话框
     if (showSuccessDialog) {

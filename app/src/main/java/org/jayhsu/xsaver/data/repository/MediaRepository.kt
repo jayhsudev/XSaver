@@ -6,8 +6,10 @@ import kotlinx.coroutines.flow.Flow
 import android.content.Intent
 
 interface MediaRepository {
-    // 解析链接获取媒体项
+    // 解析链接返回媒体项（同时 upsert Tweet）
     suspend fun parseLink(link: String): List<MediaItem>
+    // （可选）仅获取已缓存 Tweet，不触发网络
+    suspend fun getTweetCached(url: String): org.jayhsu.xsaver.data.model.TweetEntity?
 
     // 分享媒体文件
     fun shareMedia(mediaItem: MediaItem): Intent?

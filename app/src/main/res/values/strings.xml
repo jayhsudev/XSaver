@@ -70,4 +70,5 @@
     <string name="parse_link_failed">Failed to parse link</string>
     <string name="download_error_during">Error occurred during download</string>
     <string name="cancel_multi_select">Cancel multi-select</string>
+    <string name="downloading_tasks">Downloading tasks</string>
 </resources>

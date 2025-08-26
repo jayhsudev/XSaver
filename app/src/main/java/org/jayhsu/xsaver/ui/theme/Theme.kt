@@ -13,6 +13,11 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import org.jayhsu.xsaver.ui.designsystem.XSaverShapes
+import androidx.compose.runtime.CompositionLocalProvider
+import org.jayhsu.xsaver.ui.designsystem.LocalXSaverColors
+import org.jayhsu.xsaver.ui.designsystem.lightXSaverColors
+import org.jayhsu.xsaver.ui.designsystem.darkXSaverColors
 
 private val DarkColorScheme = darkColorScheme(
     primary = XBlue,
@@ -66,9 +71,13 @@ fun XSaverTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    val xsaverColors = if (darkTheme) darkXSaverColors(colorScheme) else lightXSaverColors(colorScheme)
+    CompositionLocalProvider(LocalXSaverColors provides xsaverColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            shapes = XSaverShapes,
+            content = content
+        )
+    }
 }
