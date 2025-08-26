@@ -92,10 +92,7 @@ class PersistentDownloadManager(
                         dao.updateProgress(id, DownloadStatus.Error, 0, entity.totalBytes, System.currentTimeMillis(), de.toMessage(), "Http", resp.code)
                         return@use
                     }
-                    val body = resp.body ?: run {
-                        val de = DownloadError.EmptyBody
-                        dao.updateProgress(id, DownloadStatus.Error, 0, entity.totalBytes, System.currentTimeMillis(), de.toMessage(), "EmptyBody", null); return@use
-                    }
+                    val body = resp.body
                     val contentLength = body.contentLength().takeIf { it >= 0 }
                     val total = if (resume && contentLength != null) existingBytes + contentLength else contentLength?: entity.totalBytes
                     var downloaded = existingBytes

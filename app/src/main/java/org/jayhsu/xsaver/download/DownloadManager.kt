@@ -6,7 +6,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.isActive
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -84,9 +83,7 @@ class DownloadManager(
                         update(task.copy(status = DownloadStatus.Error, error = resp.code.toString()))
                         return@use
                     }
-                    val body = resp.body ?: run {
-                        update(task.copy(status = DownloadStatus.Error, error = "Empty body")); return@use
-                    }
+                    val body = resp.body
                     val total = body.contentLength().takeIf { it >= 0 }
                     var downloaded = 0L
                     val sink = file.sink().buffer()

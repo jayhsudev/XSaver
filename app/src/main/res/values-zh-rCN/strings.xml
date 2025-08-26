@@ -44,7 +44,6 @@
     <string name="view_toggle">视图切换</string>
     <string name="theme">主题</string>
     <string name="language">语言</string>
-    <string name="clear_cache">清除缓存</string>
     <string name="about">关于</string>
     <string name="theme_light">亮色模式</string>
     <string name="theme_dark">暗色模式</string>

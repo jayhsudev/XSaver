@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -85,12 +87,20 @@ fun DownloadScreenPreview_TweetAndTasks() {
     XSaverTheme {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             TweetHeader(avatarUrl = "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png", accountName = "PreviewUser", text = "这是推文正文的预览")
-            androidx.compose.material3.Divider(modifier = Modifier.padding(vertical = 12.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 12.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
             androidx.compose.material3.Text(text = "Active Tasks", style = MaterialTheme.typography.titleSmall)
             tasks.forEach { t ->
                 androidx.compose.material3.Text(text = "${t.fileName}  ${(t.progress * 100).toInt()}%  ${t.status}", style = MaterialTheme.typography.bodySmall)
             }
-            androidx.compose.material3.Divider(modifier = Modifier.padding(vertical = 12.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 12.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(items) { item ->
                     MediaResultItem(

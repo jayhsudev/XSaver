@@ -27,21 +27,16 @@ class MainActivity : AppCompatActivity() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        // 处理权限结果
         val deniedPermissions = permissions.filterValues { !it }
-        if (deniedPermissions.isNotEmpty()) {
-            // 可以在这里显示权限说明对话框
-        }
+        if (deniedPermissions.isNotEmpty()) { }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 请求必要的权限
         requestRequiredPermissions()
 
         setContent {
-            // Observe theme mode from SettingsViewModel and apply to Compose theme
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val themeMode by settingsViewModel.themeMode.collectAsState()
             val darkTheme = when (themeMode) {
@@ -50,7 +45,6 @@ class MainActivity : AppCompatActivity() {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
             XSaverTheme(darkTheme = darkTheme) {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -58,7 +52,6 @@ class MainActivity : AppCompatActivity() {
                     val sharedLink = intent?.getStringExtra(EXTRA_SHARED_LINK)
                     AppNavigation(initialSharedLink = sharedLink)
                     if (!sharedLink.isNullOrBlank()) {
-                        // prevent re-consume on configuration changes
                         intent?.removeExtra(EXTRA_SHARED_LINK)
                     }
                 }

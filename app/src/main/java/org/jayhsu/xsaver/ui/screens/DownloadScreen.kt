@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
@@ -46,7 +45,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.jayhsu.xsaver.R
@@ -63,25 +61,17 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.DisposableEffect
 import org.jayhsu.xsaver.ui.navigation.LocalTopBarController
 import org.jayhsu.xsaver.ui.navigation.TopBarSpec
-import androidx.compose.material3.Text
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import org.jayhsu.xsaver.data.model.DownloadStatus
-import org.jayhsu.xsaver.core.error.toMessage
 import org.jayhsu.xsaver.ui.designsystem.Dimens
 import org.jayhsu.xsaver.ui.screens.download.InlineErrorBanner
 import org.jayhsu.xsaver.ui.screens.download.EmptyState
 import org.jayhsu.xsaver.ui.screens.download.DownloadTasksPanel
 import org.jayhsu.xsaver.ui.viewmodel.DownloadUiEvent
 import kotlinx.coroutines.flow.collectLatest
-
-// Inline sealed removed; now using standalone DownloadUiEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,16 +91,12 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
 
     val mediaItems = uiState.mediaItems
     val isLoading = uiState.parsing
-    val parseProgress = uiState.parseProgress
-    val parseError = uiState.parseError
-    val downloadError = uiState.downloadError
     var showResultSheet by remember { mutableStateOf(false) }
     val selected = remember { mutableStateOf(setOf<String>()) }
     var postText by remember { mutableStateOf("") }
     val parsedTweet = uiState.parsedTweet
     val downloadTasks by viewModel.downloadTasks.collectAsState()
 
-    // Set TopBar via provider
     val topBarController = LocalTopBarController.current
     val topBarOwner = remember { Any() }
     DisposableEffect(topBarOwner) {
@@ -134,9 +120,7 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
     onDispose { topBarController.setFor(topBarOwner, null) }
     }
 
-    // If launched with a shared link, parse it once
     if (!initialSharedLink.isNullOrBlank()) {
-        // trigger parse and ignore if already loading or has items
         if (!isLoading && mediaItems.isEmpty()) {
             LaunchedEffect(initialSharedLink) {
                 viewModel.parseLink(initialSharedLink)
@@ -144,7 +128,6 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
         }
     }
 
-    // 处理解析和下载错误（分别展示）
     LaunchedEffect(Unit) {
         viewModel.events.collectLatest { ev ->
             when (ev) {
@@ -158,8 +141,6 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
             }
         }
     }
-
-    // When parsing finishes, open results sheet if items
 
     Scaffold(
         floatingActionButton = {
@@ -244,14 +225,10 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
                 }
             }
 
-            // 下载任务进度显示
             DownloadTasksPanel(tasks = downloadTasks, onPause = viewModel::pauseTask, onResume = viewModel::resumeTask, onCancel = viewModel::cancelTask)
         }
     }
 
-    // Removed obsolete parse dialog code
-
-    // 结果全屏BottomSheet（Drawer样式）
     if (showResultSheet) {
         ModalBottomSheet(
             onDismissRequest = { showResultSheet = false },
@@ -307,7 +284,6 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
         }
     }
 
-    // 底部Sheet用于粘贴链接
     if (showSheet) {
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
@@ -368,10 +344,6 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
         }
     }
 
-    // 错误对话框
-    // 原对话框移除，改为 Snackbar + Inline
-
-    // 成功对话框
     if (showSuccessDialog) {
         AlertDialog(
             icon = { Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color.Green) },
@@ -387,7 +359,6 @@ fun DownloadScreen(navController: NavHostController, initialSharedLink: String? 
     }
 }
 
-// 旋转动画扩展函数
 @Composable
 fun Modifier.animateRotate(): Modifier {
     val infiniteTransition = rememberInfiniteTransition(label = "rotation")

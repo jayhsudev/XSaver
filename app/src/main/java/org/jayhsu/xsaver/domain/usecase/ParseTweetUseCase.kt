@@ -13,7 +13,6 @@ class ParseTweetUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(url: String): Result<Pair<ParsedTweet?, List<org.jayhsu.xsaver.data.model.MediaItem>>> = runCatching {
         val mediaItems = repository.parseLink(url)
-        // repository.parseLink 已负责 upsert tweet & assemble media items
         val parsed = mediaItems.firstOrNull()?.let { _ -> null } // placeholder if later we separate
         parsed to mediaItems
     }

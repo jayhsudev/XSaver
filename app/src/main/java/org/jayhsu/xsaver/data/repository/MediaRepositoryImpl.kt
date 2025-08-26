@@ -11,7 +11,6 @@ import org.jayhsu.xsaver.network.ApiService
 import org.jayhsu.xsaver.data.dao.TweetDao
 import org.jayhsu.xsaver.data.model.TweetEntity
 import org.jayhsu.xsaver.network.LinkParser
-import org.jayhsu.xsaver.core.error.ParseError
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import java.io.File
@@ -27,12 +26,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import androidx.core.net.toUri
 
 @Singleton
 class MediaRepositoryImpl @Inject constructor(
     private val mediaDao: MediaDao,
     private val tweetDao: TweetDao,
-    private val apiService: ApiService, // 留着可能的其它下载用途
     private val linkParser: LinkParser,
     private val okHttpClient: OkHttpClient,
     @param:ApplicationContext private val context: Context
@@ -202,7 +201,7 @@ class MediaRepositoryImpl @Inject constructor(
     }
 
     private fun extractNameFromUrl(u: String): String = try {
-        val path = Uri.parse(u).lastPathSegment ?: "media"
+        val path = u.toUri().lastPathSegment ?: "media"
         URLDecoder.decode(path, StandardCharsets.UTF_8.name())
     } catch (_: Throwable) { "media" }
 

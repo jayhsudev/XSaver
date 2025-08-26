@@ -26,7 +26,6 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
 
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
 
-// History screen related enums (persisted settings)
 enum class HistorySortBy { DownloadTime, FileSize }
 enum class HistoryViewMode { List, Grid }
 

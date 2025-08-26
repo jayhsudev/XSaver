@@ -23,14 +23,9 @@ import org.jayhsu.xsaver.download.PersistentDownloadManager
 import org.jayhsu.xsaver.data.dao.DownloadTaskDao
 import org.jayhsu.xsaver.data.model.DownloadTask
 import org.jayhsu.xsaver.data.model.DownloadStatus
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
-import javax.inject.Singleton
-import dagger.hilt.android.scopes.ViewModelScoped
 import okhttp3.OkHttpClient
-import org.jayhsu.xsaver.network.model.ParsedTweet
-import kotlinx.coroutines.flow.asStateFlow
 import org.jayhsu.xsaver.network.LinkParser
 import org.jayhsu.xsaver.core.error.ParseError
 import org.jayhsu.xsaver.core.error.toMessage
@@ -65,7 +60,7 @@ class DownloadViewModel @Inject constructor(
             }
     })
     }
-    // Persistent manager (experimental)
+
     private val persistentManager by lazy {
         val baseDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)?.let { File(it, "XSaver") } ?: File(context.filesDir, "downloads")
     PersistentDownloadManager(baseDir = baseDir, client = okHttpClient, dao = downloadTaskDao, externalListener = { completed ->
@@ -75,7 +70,6 @@ class DownloadViewModel @Inject constructor(
     })
     }
 
-    // Feature toggle: true = use persistent
     private val usePersistent = true
 
     val downloadTasks: StateFlow<List<DownloadTask>> =
@@ -126,11 +120,9 @@ class DownloadViewModel @Inject constructor(
     fun downloadMedia(mediaItem: MediaItem) {
         viewModelScope.launch {
             try {
-                // 从URL提取文件名，如果没有则使用标题或默认名称
                 val fileName = extractFileName(mediaItem)
                 val success = repository.downloadMedia(mediaItem.url, fileName)
                 if (success) {
-                    // 下载成功，保存到数据库
                     repository.saveMediaItem(mediaItem)
                 } else {
                     val err = DownloadError.Unknown(context.getString(org.jayhsu.xsaver.R.string.download_failed))
@@ -152,17 +144,12 @@ class DownloadViewModel @Inject constructor(
         }
     }
 
-    /**
-     * 提取安全的文件名
-     */
     private fun extractFileName(mediaItem: MediaItem): String {
-        // 首先尝试从URL提取文件名
         val urlFileName = mediaItem.url.substringAfterLast('/')
         if (urlFileName.isNotBlank() && urlFileName.contains('.')) {
             return urlFileName
         }
 
-        // 如果URL没有文件名，使用标题
         val title = mediaItem.title?.takeIf { it.isNotBlank() }
         if (title != null) {
             val extension = when (mediaItem.type) {
@@ -173,7 +160,6 @@ class DownloadViewModel @Inject constructor(
             return "$title$extension"
         }
 
-        // 最后使用默认名称
         val extension = when (mediaItem.type) {
             MediaType.VIDEO -> ".mp4"
             MediaType.IMAGE -> ".jpg"
@@ -188,12 +174,10 @@ class DownloadViewModel @Inject constructor(
 
     fun resetParseProgress() { _uiState.value = _uiState.value.copy(parseProgress = 0) }
 
-    // 分享媒体
     fun shareMedia(mediaItem: MediaItem): Intent? {
         return repository.shareMedia(mediaItem)
     }
 
-    // 在X上打开
     fun openInX(mediaItem: MediaItem) {
         val intent = Intent(Intent.ACTION_VIEW)
         intent.data = mediaItem.sourceUrl.toUri()
@@ -201,7 +185,6 @@ class DownloadViewModel @Inject constructor(
         context.startActivity(intent)
     }
 
-    // 显示下载路径
     fun getDownloadPath(mediaItem: MediaItem): String {
         val fileName = extractFileName(mediaItem)
         val downloadDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "XSaver")
@@ -211,29 +194,8 @@ class DownloadViewModel @Inject constructor(
         return "${downloadDir}/${fileName}"
     }
 
-    fun downloadMediaList(items: List<MediaItem>) {
-        viewModelScope.launch {
-            for (item in items) {
-                try {
-                    val fileName = extractFileName(item)
-                    val success = repository.downloadMedia(item.url, fileName)
-                    if (success) repository.saveMediaItem(item)
-                } catch (e: Exception) {
-                    val de = when {
-                        e.message?.contains("HTTP", true) == true -> DownloadError.Http(e.message?.filter { it.isDigit() }?.toIntOrNull() ?: -1)
-                        e.message?.contains("empty", true) == true -> DownloadError.EmptyBody
-                        e is java.io.IOException -> DownloadError.Io(e.message)
-                        else -> DownloadError.Unknown(e.message)
-                    }
-                    _uiState.value = _uiState.value.copy(error = de.toMessage(), downloadError = de)
-                }
-            }
-        }
-    }
-
     fun enqueueDownload(mediaItem: MediaItem) {
         val fileName = extractFileName(mediaItem)
-    // 去重: 若已有相同 url + fileName 的任务处于非错误终态，直接跳过
     val existing = downloadTasks.value.firstOrNull { it.url == mediaItem.url && it.fileName == fileName && it.status !in setOf(DownloadStatus.Error, DownloadStatus.Canceled, DownloadStatus.Completed) }
     if (existing != null) return
         val task = DownloadTask(

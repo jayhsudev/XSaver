@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Cached
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -69,18 +68,12 @@ fun AppNavigation(initialSharedLink: String? = null) {
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
-
-    // Reuse HistoryViewModel to get the latest downloaded item
     val historyViewModel: HistoryViewModel = hiltViewModel()
     val mediaHistory by historyViewModel.mediaHistory.collectAsState()
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val themeMode by settingsViewModel.themeMode.collectAsState()
     val language by settingsViewModel.language.collectAsState()
     val latestItem = remember(mediaHistory) { mediaHistory.maxByOrNull { it.downloadedAt } }
-    val isMultiSelect by historyViewModel.isMultiSelect.collectAsState()
-    val selectedIds by historyViewModel.selectedIds.collectAsState()
-    val sortBy by historyViewModel.sortBy.collectAsState()
-    var showMenu by remember { mutableStateOf(false) }
     var showSortDialog by remember { mutableStateOf(false) }
 
     ModalNavigationDrawer(
@@ -123,18 +116,6 @@ fun AppNavigation(initialSharedLink: String? = null) {
                         selected = false,
                         onClick = { showLanguageDialog = true },
                         icon = { Icon(Icons.Filled.Language, contentDescription = null) }
-                    )
-                    NavigationDrawerItem(
-                        label = { Text(stringResource(R.string.clear_cache)) },
-                        selected = false,
-                        onClick = {
-                            // Clear internal and external cache
-                            try {
-                                context.cacheDir?.deleteRecursively()
-                                context.externalCacheDir?.deleteRecursively()
-                            } catch (_: Exception) {}
-                        },
-                        icon = { Icon(Icons.Filled.Cached, contentDescription = null)  }
                     )
                     HorizontalDivider()
                     NavigationDrawerItem(
@@ -301,6 +282,6 @@ sealed class Screen(val route: String) {
     object Download : Screen("download")
     object History : Screen("history")
     object Media : Screen("media?url={url}&type={type}&title={title}") {
-        val base = "media"
+        const val base = "media"
     }
 }

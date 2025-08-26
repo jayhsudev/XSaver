@@ -9,7 +9,7 @@ lifecycleRuntimeKtx = "2.9.2"
 activityCompose = "1.10.1"
 composeBom = "2025.08.00"
 roomVersion = "2.7.2"
-retrofitVersion = "2.11.0"
+retrofitVersion = "2.12.0"
 okhttpVersion = "5.1.0"
 draggerHiltVerion = "2.57"
 navigationVersion = "2.9.3"
@@ -26,7 +26,7 @@ media3 = "1.8.0"
 jsoup = "1.21.2"
 testCore = "1.7.0"
 coroutines = "1.10.2"
-workRuntimeKtx = "2.9.0"
+workRuntimeKtx = "2.10.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

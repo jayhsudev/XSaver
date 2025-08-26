@@ -21,8 +21,8 @@ data class DownloadTaskEntity(
     val downloadedBytes: Long = 0L,
     val status: DownloadStatus = DownloadStatus.Pending,
     val error: String? = null,
-    val errorType: String? = null, // classification key (e.g., Http, EmptyBody, Io, Unknown)
-    val errorCode: Int? = null, // numeric code when applicable (e.g., HTTP status)
+    val errorType: String? = null,
+    val errorCode: Int? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

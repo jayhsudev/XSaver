@@ -37,7 +37,6 @@ class HistoryViewModel @Inject constructor(
     val viewMode = MutableStateFlow(ViewMode.List)
 
     init {
-        // 加载历史记录
         loadMediaHistory()
     }
 
@@ -55,13 +54,6 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
-    fun deleteAllMedia() {
-        viewModelScope.launch {
-            repository.deleteAllMediaItems()
-        }
-    }
-
-    // Multi-select helpers
     fun setMultiSelect(enabled: Boolean) {
         isMultiSelect.value = enabled
         if (!enabled) selectedIds.value = emptySet()
@@ -77,16 +69,8 @@ class HistoryViewModel @Inject constructor(
         selectedIds.value = _mediaHistory.value.map { it.id }.toSet()
     }
 
-    fun clearSelection() {
-        selectedIds.value = emptySet()
-    }
-
     fun setSortBy(newSort: SortBy) {
         sortBy.value = newSort
-    }
-
-    fun toggleViewMode() {
-        viewMode.value = if (viewMode.value == ViewMode.List) ViewMode.Grid else ViewMode.List
     }
 
     fun deleteSelected() {
@@ -101,7 +85,6 @@ class HistoryViewModel @Inject constructor(
     fun shareSelected() {
         val items = _mediaHistory.value.filter { it.id in selectedIds.value }
         if (items.isEmpty()) return
-        // Build multiple share intent
         val uris = ArrayList<Uri>()
         items.forEach { mediaItem ->
             val fileName = mediaItem.url.substringAfterLast('/').ifEmpty { "media_${System.currentTimeMillis()}" }
@@ -121,12 +104,10 @@ class HistoryViewModel @Inject constructor(
     context.startActivity(Intent.createChooser(intent, context.getString(org.jayhsu.xsaver.R.string.share_media)))
     }
 
-    // 分享媒体
     fun shareMedia(mediaItem: MediaItem): Intent? {
         return repository.shareMedia(mediaItem)
     }
 
-    // 在X上打开
     fun openInX(mediaItem: MediaItem) {
         val intent = Intent(Intent.ACTION_VIEW)
         intent.data = mediaItem.sourceUrl.toUri()
@@ -134,7 +115,6 @@ class HistoryViewModel @Inject constructor(
         context.startActivity(intent)
     }
 
-    // 显示下载路径
     fun getDownloadPath(mediaItem: MediaItem): String {
         val fileName = mediaItem.url.substringAfterLast('/').ifEmpty {
             "media_${System.currentTimeMillis()}"

@@ -7,27 +7,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import org.jayhsu.xsaver.R
 import org.jayhsu.xsaver.ui.designsystem.Dimens
 import org.jayhsu.xsaver.data.model.DownloadTask
 import org.jayhsu.xsaver.data.model.DownloadStatus
-
-// NOTE: This file groups extracted smaller composables from the oversized DownloadScreen.
-// They will be incrementally adopted; some placeholders keep parameters minimal now.
 
 @Composable
 fun InlineErrorBanner(message: String, onDismiss: () -> Unit) {

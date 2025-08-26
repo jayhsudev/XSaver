@@ -82,12 +82,10 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
     var selectedMediaType by remember { mutableStateOf<MediaType>(MediaType.VIDEO) } // 默认视频
     var showDeleteDialog by remember { mutableStateOf(false) }
     var mediaToDelete by remember { mutableStateOf<MediaItem?>(null) }
-    // Set TopBar via provider
     val topBarController = LocalTopBarController.current
     val topBarOwner = remember { Any() }
     var showMenu by remember { mutableStateOf(false) }
     var showSortDialogLocal by remember { mutableStateOf(false) }
-    // Clear on screen exit，使用 owner 防止被其它页面误清理
     DisposableEffect(topBarOwner) {
         onDispose { topBarController.setFor(topBarOwner, null) }
     }
@@ -142,11 +140,9 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
         )
     }
 
-    // 过滤媒体项
     val filteredMedia = mediaHistory.filter { it.type == selectedMediaType }
 
     Column(modifier = Modifier.fillMaxSize()) {
-    // 顶部栏由 AppNavigation 提供
     SingleChoiceSegmentedButtonRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -175,13 +171,11 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
             )
         }
 
-    // 排序
     val sortedMedia = when (sortByPref) {
         HistorySortBy.DownloadTime -> filteredMedia.sortedByDescending { it.downloadedAt }
         HistorySortBy.FileSize -> filteredMedia.sortedByDescending { it.size ?: -1f }
     }
 
-    // 媒体列表
     if (sortedMedia.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -259,7 +253,6 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
         }
     }
 
-    // 删除确认对话框
     if (showDeleteDialog && mediaToDelete != null) {
         AlertDialog(
             title = { Text(stringResource(R.string.delete_confirm_title)) },
@@ -281,8 +274,6 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
         )
     }
 
-
-    // 底部状态栏（多选时显示分享和删除）
     if (isMultiSelect && selectedIds.isNotEmpty()) {
     Surface(tonalElevation = 3.dp) {
             BottomAppBar(modifier = Modifier.navigationBarsPadding()) {
@@ -296,7 +287,6 @@ fun HistoryScreen(onPreview: (MediaItem) -> Unit = {}, onBack: () -> Unit = {}) 
         }
     }
 
-    // 排序对话框
     if (showSortDialogLocal) {
         OptionSelectionDialog(
             title = stringResource(R.string.file_sort),

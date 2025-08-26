@@ -43,11 +43,7 @@ class DownloadWorker @AssistedInject constructor(
                     dao.updateProgress(id, DownloadStatus.Error, 0, null, System.currentTimeMillis(), de.toMessage(), "Http", resp.code)
                     return Result.retry()
                 }
-                val body = resp.body ?: run {
-                    val de = DownloadError.EmptyBody
-                    dao.updateProgress(id, DownloadStatus.Error, 0, null, System.currentTimeMillis(), de.toMessage(), "EmptyBody", null)
-                    return Result.failure()
-                }
+                val body = resp.body
                 val total = body.contentLength().takeIf { it >= 0 }
                 var downloaded = 0L
                 var lastFlush = System.currentTimeMillis()
